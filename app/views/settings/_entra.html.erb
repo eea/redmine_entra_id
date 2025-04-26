@@ -1,0 +1,25 @@
+<p>
+    <%= label_tag "settings[enabled]", l(:entra_enabled) %>
+    <%= check_box_tag 'settings[enabled]', true, EntraId.enabled? %>
+    <em class="info"><%= l(:entra_enabled_info) %></em>
+</p>
+<p>
+    <%= label_tag "settings[exclusive]", l(:entra_exclusive) %>
+    <%= check_box_tag 'settings[exclusive]', true, EntraId.exclusive? %>
+    <em class="info"><%= l(:entra_exclusive_info) %></em>
+</p>
+<p>
+    <%= label_tag "settings[application_id]", l(:entra_application_id) %>
+    <%= text_field_tag "settings[application_id]", EntraId.application_id, size: 40 %>
+    <em class="info"><%= l(:entra_application_id_info) %></em>
+</p>
+<p>
+    <%= label_tag "settings[client_secret]", l(:entra_client_secret) %>
+    <%= text_field_tag "settings[client_secret]", EntraId.client_secret, size: 40 %>
+    <em class="info"><%= l(:entra_client_secret_info) %></em>
+</p>
+<p>
+    <%= label_tag "settings[directory_id]", l(:entra_directory_id) %>
+    <%= text_field_tag "settings[directory_id]", EntraId.directory_id, size: 40 %>
+    <em class="info"><%= l(:entra_directory_id_info) %></em>
+</p>

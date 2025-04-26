@@ -1,0 +1,13 @@
+# English strings go here for Rails i18n
+en:
+  entra_enabled: Enable
+  entra_enabled_info: Enable login using EntraID
+  entra_exclusive: Exclusive
+  entra_exclusive_info: Enable login only via EntraID
+  entra_application_id: Application (client) ID
+  entra_application_id_info: Application ID
+  entra_client_secret: Client secret
+  entra_client_secret_info: Application password
+  entra_directory_id: Directory (tenant) ID
+  entra_directory_id_info: Directory ID
+  entra_login_with: Login with EntraID
