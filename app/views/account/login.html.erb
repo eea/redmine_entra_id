@@ -1,0 +1,4 @@
+<%= call_hook :view_account_login_top %>
+<%= render "login_form" unless EntraId.exclusive? %>
+<%= render "entra_id_button" if EntraId.enabled? %>
+<%= call_hook :view_account_login_bottom %>

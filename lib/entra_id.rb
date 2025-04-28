@@ -12,19 +12,16 @@ module EntraId
       settings[:exclusive]
     end
 
-    def application_id
-      settings[:application_id]
+    def client_id
+      settings[:client_id]
     end
 
     def client_secret
-      secret = settings[:client_secret]
-      secret.present? ? "#{secret[0..2]}#{"*" * 18}" : ""
+      settings[:client_secret]
     end
 
-    def directory_id
-      settings[:directory_id]
+    def tenant_id
+      settings[:tenant_id]
     end
   end
 end
-
-require_relative "entra_id/hooks/views/login_view_hooks"

@@ -1,0 +1,7 @@
+<% content_for :header_tags do %>
+    <%= stylesheet_link_tag "entra_id", plugin: "entra_id" %>
+<% end %>
+
+<div id="entra-id-form">
+    <%= link_to "Login with EntraID", new_entra_id_authorization_path %>
+</div>

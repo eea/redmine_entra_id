@@ -9,11 +9,8 @@ Redmine::Plugin.register :entra_id do
   settings default: {
     enabled: false,
     exclusive: false,
-    application_id: "",
+    client_id: "",
     client_secret: "",
-    directory_id: ""
-  }, partial: "settings/entra"
+    tenant_id: ""
+  }, partial: "settings/entra_id"
 end
-
-
-require_relative "lib/entra_id"
