@@ -3,12 +3,17 @@ class EntraId::CallbacksController < AccountController
     :set_entra_id_identity
 
   def show
-    user = @identity.sign_in
+    user = User.by_email_or_login(@identity.preferred_username).first
 
     if user
       user.active? ? handle_active_user(user) : handle_inactive_user(user)
     elsif Setting.self_registration?
-      register_automatically @identity.registration
+      user = User.new @identity.to_user_params
+
+      user.random_password
+      user.register
+
+      register_automatically user
     else
       flash[:error] = "Account does not exist and self-registration is disabled"
       redirect_to signin_path

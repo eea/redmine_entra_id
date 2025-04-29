@@ -14,3 +14,8 @@ Redmine::Plugin.register :entra_id do
     tenant_id: ""
   }, partial: "settings/entra_id"
 end
+
+Rails.application.config.after_initialize do
+  EmailAddress.include EmailAddress::Identifiable
+  User.include User::Identifiable
+end

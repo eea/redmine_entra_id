@@ -23,15 +23,13 @@ class EntraId::Identity
     @claims["preferred_username"]
   end
 
-  def sign_in_or_register!
-    sign_in || register_user
-  end
-
-  def sign_in
-    User.joins(:email_addresses)
-      .where(email_addresses: { address: preferred_username })
-      .or(User.where(login: preferred_username))
-      .first
+  def to_user_params
+    {
+      login: preferred_username,
+      firstname: first_name,
+      lastname: last_name,
+      mail: preferred_username
+    }
   end
 
   def registration
@@ -41,9 +39,6 @@ class EntraId::Identity
       lastname: last_name,
       mail: preferred_username
     )
-
-    user.random_password
-    user.register
 
     user
   end
