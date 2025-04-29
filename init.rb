@@ -18,4 +18,6 @@ end
 Rails.application.config.after_initialize do
   EmailAddress.include EmailAddress::Identifiable
   User.include User::Identifiable
+
+  SettingsController.include MaskableEntraIdSettings
 end

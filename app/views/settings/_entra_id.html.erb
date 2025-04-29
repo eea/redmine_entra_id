@@ -15,7 +15,7 @@
 </p>
 <p>
     <%= label_tag "settings[client_secret]", l(:entra_id_client_secret) %>
-    <%= password_field_tag "settings[client_secret]", size: 40 %>
+    <%= text_field_tag "settings[client_secret]", EntraId.masked_client_secret, size: 40 %>
     <em class="info"><%= l(:entra_id_client_secret_info) %></em>
 </p>
 <p>
