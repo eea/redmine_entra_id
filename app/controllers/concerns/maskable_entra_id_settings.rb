@@ -12,10 +12,13 @@ module MaskableEntraIdSettings
       return unless request.post?
 
       received_client_secret = params.dig(:settings, :client_secret)
-      masked_client_secret = EntraId.masked_client_secret
 
-      if received_client_secret == masked_client_secret
-        params[:settings][:client_secret] = EntraId.client_secret
+      if received_client_secret == EntraId.masked_client_secret
+        # User didn't change the secret, keep the encrypted value
+        params[:settings][:client_secret] = EntraId.raw_client_secret
+      elsif received_client_secret.present?
+        # User provided a new secret, encrypt it
+        params[:settings][:client_secret] = EntraId.encrypt_client_secret(received_client_secret)
       end
     end
 end
