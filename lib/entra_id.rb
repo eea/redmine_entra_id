@@ -41,7 +41,7 @@ module EntraId
 
       def encryptor
         @encryptor ||= ActiveSupport::MessageEncryptor.new(
-          ActiveSupport::KeyGenerator.new(Rails.application.credentials.secret_key_base).generate_key("entra_id_client_secret", 32)
+          Rails.application.key_generator.generate_key("entra_id_client_secret", 32)
         )
       end
 

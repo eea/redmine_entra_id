@@ -58,7 +58,7 @@ class LoginPageTest < Redmine::IntegrationTest
 
       # Should contain required OAuth parameters
       assert_match(/client_id=test-client-id/, response.location)
-      assert_match(/scope=openid\+profile\+email/, response.location)
+      assert_match(/scope=openid%20profile%20email/, response.location)
       assert_match(/response_type=code/, response.location)
       assert_match(/code_challenge=/, response.location)
       assert_match(/code_challenge_method=S256/, response.location)
