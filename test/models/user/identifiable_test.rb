@@ -36,4 +36,60 @@ class User::IdentifiableTest < ActiveSupport::TestCase
     found_by_email_or_login_login_case = User.by_email_or_login("TESTUSER").first
     assert_equal @user, found_by_email_or_login_login_case
   end
+
+  test "user can be identified by EntraID OID" do
+    @user.update!(oid: "test-oid-123")
+
+    identity = mock("identity")
+    identity.stubs(:id).returns("test-oid-123")
+    identity.stubs(:preferred_username).returns("other@example.com")
+
+    found_user = User.find_by_identity(identity)
+    assert_equal @user, found_user
+  end
+
+  test "user can be found by email when not having an Entra ID OID" do
+    identity = mock("identity")
+    identity.stubs(:id).returns("non-existent-oid")
+    identity.stubs(:preferred_username).returns("testuser@example.com")
+
+    found_user = User.find_by_identity(identity)
+    assert_equal @user, found_user
+  end
+
+  test "user not found when OID or email don't match" do
+    identity = mock("identity")
+    identity.stubs(:id).returns("non-existent-oid")
+    identity.stubs(:preferred_username).returns("nonexistent@example.com")
+
+    found_user = User.find_by_identity(identity)
+    assert_nil found_user
+  end
+
+  test "user attributes updated from EntraID while preserving login and mail" do
+    @user.update!(oid: "old-oid")
+
+    identity = mock("identity")
+    identity.stubs(:to_user_params).returns({
+      login: "newlogin",
+      firstname: "NewFirst",
+      lastname: "NewLast",
+      mail: "new@example.com",
+      oid: "new-oid-123",
+      synced_at: Time.current
+    })
+
+    @user.sync_with_identity(identity)
+
+    @user.reload
+
+    assert_equal "NewFirst", @user.firstname
+    assert_equal "NewLast", @user.lastname
+    assert_equal "new-oid-123", @user.oid
+    assert_not_nil @user.synced_at
+
+    # Should not update login and mail
+    assert_equal "testuser", @user.login
+    assert_equal "testuser@example.com", @user.mail
+  end
 end

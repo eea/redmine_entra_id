@@ -18,7 +18,6 @@ class EntraId::AuthorizationTest < ActiveSupport::TestCase
 
   def teardown
     Setting.plugin_entra_id = @original_settings
-    WebMock.reset!
   end
 
   test "initializes with required redirect_uri" do

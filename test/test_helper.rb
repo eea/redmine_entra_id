@@ -7,3 +7,10 @@ require_relative "../../../test/test_helper"
 require "webmock/minitest"
 
 WebMock.disable_net_connect!(allow_localhost: true)
+
+# Load OAuth test helper
+require_relative "support/oauth_test_helper"
+
+class Minitest::Test
+  include OauthTestHelper
+end

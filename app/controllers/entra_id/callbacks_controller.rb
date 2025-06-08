@@ -3,9 +3,10 @@ class EntraId::CallbacksController < AccountController
     :set_entra_id_identity
 
   def show
-    user = User.by_email_or_login(@identity.preferred_username).first
+    user = User.find_by_identity(@identity)
 
     if user
+      user.sync_with_identity(@identity)
       user.active? ? handle_active_user(user) : handle_inactive_user(user)
     elsif Setting.self_registration?
       user = User.new @identity.to_user_params

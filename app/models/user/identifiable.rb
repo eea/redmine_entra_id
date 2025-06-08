@@ -7,4 +7,15 @@ module User::Identifiable
 
     scope :by_email_or_login, ->(identifier) { by_email(identifier).or(User.by_login(identifier)) }
   end
+
+  class_methods do
+    def find_by_identity(identity)
+      user = find_by(oid: identity.id)
+      user.present? ? user : by_email_or_login(identity.preferred_username).first
+    end
+  end
+
+  def sync_with_identity(identity)
+    update!(identity.to_user_params.except(:login, :mail))
+  end
 end

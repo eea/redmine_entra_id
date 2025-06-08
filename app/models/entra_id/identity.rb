@@ -28,7 +28,9 @@ class EntraId::Identity
       login: preferred_username,
       firstname: first_name,
       lastname: last_name,
-      mail: preferred_username
+      mail: preferred_username,
+      oid: id,
+      synced_at: Time.current
     }
   end
 
