@@ -1,6 +1,10 @@
-require "test_helper"
+# frozen_string_literal: true
 
-class EntraId::CallbacksControllerTest < ActionDispatch::IntegrationTest
+require_relative "../../test_helper"
+
+class EntraId::CallbacksControllerTest < Redmine::IntegrationTest
+  include OauthTestHelper
+
   test "user data gets synced from EntraId on login" do
     user = users(:users_002)
     user.update!(oid: "test-oid-123", firstname: "OldFirstName", lastname: "OldLastName")

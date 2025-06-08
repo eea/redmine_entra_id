@@ -69,6 +69,7 @@ jobs:
     - name: Setup database
       run: |
         bin/rails db:prepare redmine:load_default_data REDMINE_LANG=en
+        bin/rails redmine:plugins:migrate NAME=entra_id
     
     - name: Run tests
       run: bin/rails redmine:plugins:test NAME=entra_id
