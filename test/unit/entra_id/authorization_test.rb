@@ -3,21 +3,17 @@
 require_relative "../../test_helper"
 
 class EntraId::AuthorizationTest < ActiveSupport::TestCase
-  include Redmine::I18n
-  def setup
-    @original_settings = Setting.plugin_entra_id.dup
+  include OauthTestHelper
+
+  setup do
     Setting.plugin_entra_id = {
       enabled: true,
       client_id: "test-client-id",
       client_secret: "test-client-secret",
       tenant_id: "test-tenant-id"
-    }
+    }.with_indifferent_access
 
     @redirect_uri = "https://example.com/callback"
-  end
-
-  def teardown
-    Setting.plugin_entra_id = @original_settings
   end
 
   test "initializes with required redirect_uri" do
@@ -47,7 +43,7 @@ class EntraId::AuthorizationTest < ActiveSupport::TestCase
     assert_equal nonce, auth.nonce
   end
 
-  test "generates secure random values when not provided" do
+  test "generates a random values when not provided" do
     auth1 = EntraId::Authorization.new(redirect_uri: @redirect_uri)
     auth2 = EntraId::Authorization.new(redirect_uri: @redirect_uri)
 
@@ -56,7 +52,7 @@ class EntraId::AuthorizationTest < ActiveSupport::TestCase
     assert_not_equal auth1.nonce, auth2.nonce
   end
 
-  test "code_challenge generates correct SHA256 hash" do
+  test "code_challenge generates a SHA256 hash" do
     code_verifier = "test-verifier"
     auth = EntraId::Authorization.new(
       redirect_uri: @redirect_uri,
@@ -80,7 +76,7 @@ class EntraId::AuthorizationTest < ActiveSupport::TestCase
 
     assert_equal "https", parsed_url.scheme
     assert_equal "login.microsoftonline.com", parsed_url.host
-    assert_equal "/test-tenant-id/oauth2/v2.0/authorize", parsed_url.path
+    assert_equal "/#{EntraId.tenant_id}/oauth2/v2.0/authorize", parsed_url.path
 
     assert_equal [ "test-client-id" ], params["client_id"]
     assert_equal [ @redirect_uri ], params["redirect_uri"]
@@ -96,12 +92,10 @@ class EntraId::AuthorizationTest < ActiveSupport::TestCase
 
   test "exchange_code_for_identity returns identity with valid token" do
     authorization = EntraId::Authorization.new(redirect_uri: @redirect_uri)
-    mock_access_token = mock_access_token_response(authorization, "mock.jwt.token")
-    mock_jwt_verification(authorization)
-
-    authorization.send(:client).auth_code.stubs(:get_token)
-      .with("auth-code", { redirect_uri: @redirect_uri, code_verifier: authorization.code_verifier })
-      .returns(mock_access_token)
+    id_token = create_valid_jwt_token(authorization.nonce)
+    
+    stub_token_exchange("auth-code", id_token, authorization.code_verifier, redirect_uri: @redirect_uri)
+    stub_jwks_endpoint
 
     identity = authorization.exchange_code_for_identity(code: "auth-code")
 
@@ -110,11 +104,10 @@ class EntraId::AuthorizationTest < ActiveSupport::TestCase
 
   test "exchange_code_for_identity returns nil with invalid nonce" do
     authorization = EntraId::Authorization.new(redirect_uri: @redirect_uri)
-    mock_access_token = mock_access_token_response(authorization, "mock.jwt.token")
-    mock_jwt_verification(authorization, nonce: "wrong-nonce")
-
-    authorization.send(:client).auth_code.stubs(:get_token)
-      .returns(mock_access_token)
+    id_token = create_valid_jwt_token("wrong-nonce")
+    
+    stub_token_exchange("auth-code", id_token, authorization.code_verifier, redirect_uri: @redirect_uri)
+    stub_jwks_endpoint
 
     identity = authorization.exchange_code_for_identity(code: "auth-code")
 
@@ -123,41 +116,13 @@ class EntraId::AuthorizationTest < ActiveSupport::TestCase
 
   test "exchange_code_for_identity returns nil with JWT verification error" do
     authorization = EntraId::Authorization.new(redirect_uri: @redirect_uri)
-    mock_access_token = mock_access_token_response(authorization, "mock.jwt.token")
-    mock_jwt_verification(authorization, should_succeed: false)
-
-    authorization.send(:client).auth_code.stubs(:get_token)
-    .returns(mock_access_token)
+    invalid_token = create_invalid_jwt_token
+    
+    stub_token_exchange("auth-code", invalid_token, authorization.code_verifier, redirect_uri: @redirect_uri)
+    stub_jwks_endpoint
 
     identity = authorization.exchange_code_for_identity(code: "auth-code")
 
     assert_nil identity
   end
-
-
-
-  private
-
-    def mock_access_token_response(authorization, jwt_token)
-      mock_token = stub("access_token")
-      mock_token.stubs(:params).returns({ "id_token" => jwt_token })
-      mock_token.stubs(:token).returns("access_token_value")
-      mock_token
-    end
-
-    def mock_jwt_verification(authorization, nonce: nil, should_succeed: true)
-      if should_succeed
-        # Mock successful JWT verification
-        claims = {
-          "oid" => "user-id",
-          "preferred_username" => "test@example.com",
-          "nonce" => nonce || authorization.nonce
-      }
-
-      authorization.stubs(:decode_id_token).returns(claims)
-      else
-        # Mock failed JWT verification
-        authorization.stubs(:decode_id_token).raises(JWT::VerificationError.new("Mock verification error"))
-      end
-    end
 end
