@@ -4,9 +4,9 @@ require_relative "../test_helper"
 
 class AccountControllerTest < Redmine::IntegrationTest
   test "plugin disabled no entra id button appears" do
-    with_settings plugin_entra_id: { enabled: false } do
+    with_settings plugin_entra_id: { enabled: false }, login_required: false do
       get signin_path
-
+      
       assert_response :success
       assert_select "#entra-id-form", count: 0
       assert_select "a", text: "Login with EntraID", count: 0
@@ -17,7 +17,7 @@ class AccountControllerTest < Redmine::IntegrationTest
   end
 
   test "plugin enabled entra id button and regular form appear" do
-    with_settings plugin_entra_id: { enabled: true, exclusive: false } do
+    with_settings plugin_entra_id: { enabled: true, exclusive: false }, login_required: false do
       get signin_path
 
       assert_response :success
@@ -30,7 +30,7 @@ class AccountControllerTest < Redmine::IntegrationTest
   end
 
   test "plugin enabled and exclusive only entra id button appears" do
-    with_settings plugin_entra_id: { enabled: true, exclusive: true } do
+    with_settings plugin_entra_id: { enabled: true, exclusive: true }, login_required: false do
       get signin_path
 
       assert_response :success
