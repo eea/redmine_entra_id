@@ -92,4 +92,19 @@ class User::IdentifiableTest < ActiveSupport::TestCase
     assert_equal "testuser", @user.login
     assert_equal "testuser@example.com", @user.mail
   end
+
+  test "user is EntraId authenticated when oid is present" do
+    @user.update!(oid: "test-oid-123")
+    assert @user.entra_id_authenticated?
+  end
+
+  test "user is not EntraId authenticated when oid is blank" do
+    @user.update!(oid: nil)
+    refute @user.entra_id_authenticated?
+  end
+
+  test "user is not EntraId authenticated when oid is empty string" do
+    @user.update!(oid: "")
+    refute @user.entra_id_authenticated?
+  end
 end

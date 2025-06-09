@@ -18,4 +18,8 @@ module User::Identifiable
   def sync_with_identity(identity)
     update!(identity.to_user_params.except(:login, :mail))
   end
+
+  def entra_id_authenticated?
+    oid.present?
+  end
 end

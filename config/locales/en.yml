@@ -11,3 +11,4 @@ en:
   entra_id_tenant_id: Directory (tenant) ID
   entra_id_tenant_id_info: Directory ID
   entra_id_login_with: Login with EntraID
+  field_entra_id_oid: EntraID OID

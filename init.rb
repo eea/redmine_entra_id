@@ -19,5 +19,6 @@ Rails.application.config.after_initialize do
   EmailAddress.include EmailAddress::Identifiable
   User.include User::Identifiable
 
-  SettingsController.include MaskableEntraIdSettings
+  SettingsController.include EntraId::MaskableSettings
+  UserQuery.include EntraId::UserQueryPatch
 end

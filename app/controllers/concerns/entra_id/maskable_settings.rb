@@ -1,4 +1,4 @@
-module MaskableEntraIdSettings
+module EntraId::MaskableSettings
   extend ActiveSupport::Concern
 
   included do
