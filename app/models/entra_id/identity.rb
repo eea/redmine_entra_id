@@ -1,6 +1,5 @@
 class EntraId::Identity
-  GRAPH_HOST = "graph.microsoft.com"
-  GRAPH_PATH = "/v1.0/me"
+  IDENTITY_URL = "https://graph.microsoft.com/v1.0/me"
 
   def initialize(claims:, access_token:)
     @claims = claims
@@ -50,7 +49,7 @@ class EntraId::Identity
   end
 
   def fetch_user_info
-    uri = URI("https://#{GRAPH_HOST}/v1.0/me")
+    uri = URI(IDENTITY_URL)
 
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = true
