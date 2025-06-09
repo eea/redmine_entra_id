@@ -16,9 +16,9 @@ class EntraId::AuthorizationsController < AccountController
   private
 
     def ensure_valid_configuration
-      unless EntraId.valid?
-        flash[:error] = "EntraId authentication is not properly configured."
-        redirect_to signin_path and return
-      end
+      return if EntraId.valid?
+
+      flash[:error] = "EntraId authentication is not properly configured."
+      redirect_to signin_path
     end
 end
