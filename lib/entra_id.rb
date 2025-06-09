@@ -29,6 +29,10 @@ module EntraId
       settings[:tenant_id]
     end
 
+    def valid?
+      enabled? && client_id.present? && client_secret.present? && tenant_id.present?
+    end
+
     def encrypt_client_secret(value)
       encryptor.encrypt_and_sign(value)
     end

@@ -76,4 +76,63 @@ class EntraIdTest < ActiveSupport::TestCase
 
     assert_equal "", EntraId.masked_client_secret
   end
+
+  test "valid when fully configured" do
+    encrypted_secret = EntraId.encrypt_client_secret("test-secret-123")
+    Setting.plugin_entra_id = {
+      enabled: true,
+      client_id: "test-client-id",
+      client_secret: encrypted_secret,
+      tenant_id: "test-tenant-id"
+    }
+
+    assert EntraId.valid?
+  end
+
+  test "invalid when disabled" do
+    encrypted_secret = EntraId.encrypt_client_secret("test-secret-123")
+    Setting.plugin_entra_id = {
+      enabled: false,
+      client_id: "test-client-id",
+      client_secret: encrypted_secret,
+      tenant_id: "test-tenant-id"
+    }
+
+    assert_not EntraId.valid?
+  end
+
+  test "invalid without client_id" do
+    encrypted_secret = EntraId.encrypt_client_secret("test-secret-123")
+    Setting.plugin_entra_id = {
+      enabled: true,
+      client_id: nil,
+      client_secret: encrypted_secret,
+      tenant_id: "test-tenant-id"
+    }
+
+    assert_not EntraId.valid?
+  end
+
+  test "invalid without client_secret" do
+    Setting.plugin_entra_id = {
+      enabled: true,
+      client_id: "test-client-id",
+      client_secret: nil,
+      tenant_id: "test-tenant-id"
+    }
+
+    assert_not EntraId.valid?
+  end
+
+  test "invalid without tenant_id" do
+    encrypted_secret = EntraId.encrypt_client_secret("test-secret-123")
+    Setting.plugin_entra_id = {
+      enabled: true,
+      client_id: "test-client-id",
+      client_secret: encrypted_secret,
+      tenant_id: nil
+    }
+
+    assert_not EntraId.valid?
+  end
 end
