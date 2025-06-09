@@ -36,9 +36,10 @@ class EntraId::CallbacksController < AccountController
 
       if received_state.blank? || expected_state.blank?
         flash[:error] = "Invalid OAuth credentials. Authentication failed"
+        redirect_to signin_path
       elsif !ActiveSupport::SecurityUtils.secure_compare(received_state, expected_state)
         flash[:error] = "Invalid OAuth state. Authentication failed"
-        redirect_to signing_path
+        redirect_to signin_path
       end
     end
 
