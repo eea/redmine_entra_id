@@ -56,8 +56,28 @@ module OauthTestHelper
       )
   end
 
-  def stub_full_oauth_flow(code: "test-code", access_token: "mock-access-token", user_data: {}, code_verifier: nil)
-    stub_oauth_token_exchange(code: code, access_token: access_token, code_verifier: code_verifier)
+  def stub_oauth_user_info_error(status: 401, error_body: { error: "unauthorized" })
+    userinfo_endpoint = "https://graph.microsoft.com/v1.0/me"
+
+    stub_request(:get, userinfo_endpoint)
+      .to_return(
+        status: status,
+        body: error_body.to_json,
+        headers: { "Content-Type" => "application/json" }
+      )
+  end
+
+  def stub_full_oauth_flow(code: "test-code", access_token: "mock-access-token", user_data: {}, code_verifier: nil, nonce: "test-nonce")
+    stub_jwks_endpoint
+    
+    # Create a valid ID token for JWT validation with correct OID
+    jwt_claims = {}
+    jwt_claims["oid"] = user_data[:id] if user_data[:id]
+    jwt_claims["preferred_username"] = user_data[:mail] if user_data[:mail]
+    
+    id_token = create_valid_jwt_token(nonce, user_data: jwt_claims)
+    
+    stub_oauth_token_exchange(code: code, access_token: access_token, id_token: id_token, code_verifier: code_verifier)
     stub_oauth_user_info(access_token: access_token, user_data: user_data)
   end
 
@@ -115,8 +135,8 @@ module OauthTestHelper
       )
   end
 
-  def create_valid_jwt_token(nonce)
-    payload = {
+  def create_valid_jwt_token(nonce, user_data: {})
+    default_claims = {
       "iss" => "https://login.microsoftonline.com/test-tenant-id/v2.0",
       "aud" => "test-client-id",
       "exp" => Time.now.to_i + 3600,
@@ -125,6 +145,8 @@ module OauthTestHelper
       "preferred_username" => "test@example.com",
       "nonce" => nonce
     }
+
+    payload = default_claims.merge(user_data)
 
     JWT.encode(payload, test_rsa_key, "RS256", { kid: "test-key-id" })
   end

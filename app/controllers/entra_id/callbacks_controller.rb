@@ -1,6 +1,5 @@
 class EntraId::CallbacksController < AccountController
-  before_action :handle_oauth_errors, :validate_oauth_state, :verify_pkce,
-    :set_entra_id_identity
+  before_action :ensure_entra_id_enabled, :handle_oauth_errors, :validate_oauth_state, :set_entra_id_identity
 
   def show
     user = User.find_by_identity(@identity)
@@ -8,20 +7,21 @@ class EntraId::CallbacksController < AccountController
     if user
       user.sync_with_identity(@identity)
       user.active? ? handle_active_user(user) : handle_inactive_user(user)
-    elsif Setting.self_registration?
+    else
       user = User.new @identity.to_user_params
 
       user.random_password
       user.register
 
       register_automatically user
-    else
-      flash[:error] = "Account does not exist and self-registration is disabled"
-      redirect_to signin_path
     end
   end
 
   private
+
+    def ensure_entra_id_enabled
+      head :bad_request unless EntraId.enabled?
+    end
 
     def handle_oauth_errors
       return unless params[:error]
@@ -41,13 +41,6 @@ class EntraId::CallbacksController < AccountController
         flash[:error] = "Invalid OAuth state. Authentication failed"
         redirect_to signin_path
       end
-    end
-
-    def verify_pkce
-      return if session[:entra_id_pkce_verifier]
-
-      flash[:error] = "PKCE verifier is missing. Authentication failed."
-      redirect_to signin_path
     end
 
     def set_entra_id_identity
