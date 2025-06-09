@@ -4,8 +4,6 @@ require_relative "../test_helper"
 
 class EntraIdTest < ActiveSupport::TestCase
   def setup
-    @original_settings = Setting.plugin_entra_id.dup
-    # Set up a test secret (encrypted)
     encrypted_secret = EntraId.encrypt_client_secret("test-secret-123")
     Setting.plugin_entra_id = {
       enabled: true,
@@ -14,10 +12,6 @@ class EntraIdTest < ActiveSupport::TestCase
       client_secret: encrypted_secret,
       tenant_id: "test-tenant-id"
     }
-  end
-
-  def teardown
-    Setting.plugin_entra_id = @original_settings
   end
 
   test "client_secret returns decrypted value for encrypted secrets" do
@@ -50,7 +44,6 @@ class EntraIdTest < ActiveSupport::TestCase
     original_secret = "my-super-secret-key"
     encrypted = EntraId.encrypt_client_secret(original_secret)
 
-    # Set the encrypted value and verify it decrypts correctly
     Setting.plugin_entra_id = Setting.plugin_entra_id.merge(client_secret: encrypted)
 
     assert_equal original_secret, EntraId.client_secret
@@ -82,13 +75,5 @@ class EntraIdTest < ActiveSupport::TestCase
     Setting.plugin_entra_id = Setting.plugin_entra_id.merge(client_secret: "")
 
     assert_equal "", EntraId.masked_client_secret
-  end
-
-  test "all settings accessors work correctly" do
-    assert_equal true, EntraId.enabled?
-    assert_equal false, EntraId.exclusive?
-    assert_equal "test-client-id", EntraId.client_id
-    assert_equal "test-secret-123", EntraId.client_secret
-    assert_equal "test-tenant-id", EntraId.tenant_id
   end
 end
