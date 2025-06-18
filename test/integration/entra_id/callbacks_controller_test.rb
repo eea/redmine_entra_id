@@ -199,4 +199,97 @@ class EntraId::CallbacksControllerTest < Redmine::IntegrationTest
 
     assert_response :bad_request
   end
+
+  test "successful authentication clears OAuth session data" do
+    user = users(:users_002)
+    user.update!(oid: "test-oid-123")
+
+    # Start OAuth flow - this populates session with state, nonce, verifier
+    get new_entra_id_authorization_path
+    assert_redirected_to %r{https://login\.microsoftonline\.com}
+
+    # Verify session data is present
+    assert_not_nil session[:entra_id_state]
+    assert_not_nil session[:entra_id_nonce]
+    assert_not_nil session[:entra_id_pkce_verifier]
+
+    # Extract session values for OAuth flow
+    state = session[:entra_id_state]
+    code_verifier = session[:entra_id_pkce_verifier]
+    nonce = session[:entra_id_nonce]
+    authorization_code = "test-code"
+
+    # Stub the full OAuth flow for the callback
+    stub_full_oauth_flow(
+      code: authorization_code,
+      code_verifier: code_verifier,
+      nonce: nonce,
+      user_data: {
+        id: "test-oid-123",
+        givenName: "TestFirst",
+        surname: "TestLast",
+        mail: user.mail
+      }
+    )
+
+    # Simulate the callback from EntraId
+    get entra_id_callback_path, params: {
+      code: authorization_code,
+      state: state
+    }
+
+    assert_redirected_to my_page_path
+
+    # Verify OAuth session data has been cleared after successful authentication
+    assert_nil session[:entra_id_state]
+    assert_nil session[:entra_id_nonce]
+    assert_nil session[:entra_id_pkce_verifier]
+  end
+
+  test "failed authentication due to OAuth error clears OAuth session data" do
+    # Start OAuth flow to set session state
+    get new_entra_id_authorization_path
+    
+    # Verify session data is present
+    assert_not_nil session[:entra_id_state]
+    assert_not_nil session[:entra_id_nonce]
+    assert_not_nil session[:entra_id_pkce_verifier]
+
+    # Simulate OAuth error callback
+    get entra_id_callback_path, params: {
+      error: "access_denied",
+      error_description: "The user denied the request"
+    }
+
+    assert_redirected_to signin_path
+    assert_equal "The user denied the request", flash[:error]
+
+    # Verify OAuth session data has been cleared after error
+    assert_nil session[:entra_id_state]
+    assert_nil session[:entra_id_nonce]
+    assert_nil session[:entra_id_pkce_verifier]
+  end
+
+  test "failed authentication due to state mismatch clears OAuth session data" do
+    # Start OAuth flow to set session state
+    get new_entra_id_authorization_path
+    
+    # Verify session data is present
+    assert_not_nil session[:entra_id_state]
+    assert_not_nil session[:entra_id_nonce]
+    assert_not_nil session[:entra_id_pkce_verifier]
+    
+    get entra_id_callback_path, params: { 
+      code: "test-code", 
+      state: "different-state" 
+    }
+
+    assert_redirected_to signin_path
+    assert_equal "Invalid OAuth state. Authentication failed", flash[:error]
+
+    # Verify OAuth session data has been cleared after error
+    assert_nil session[:entra_id_state]
+    assert_nil session[:entra_id_nonce]
+    assert_nil session[:entra_id_pkce_verifier]
+  end
 end

@@ -92,11 +92,8 @@ class EntraId::Authorization
     def jwks
       uri = URI("https://#{HOST}/#{EntraId.tenant_id}/#{JWKS_PATH}")
 
-      http = Net::HTTP.new(uri.host, uri.port)
-      http.use_ssl = true
-
-      request = Net::HTTP::Get.new(uri.request_uri)
-      response = http.request(request)
+      client = EntraId::SecureHttpClient.new(uri)
+      response = client.get(uri.request_uri)
 
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)

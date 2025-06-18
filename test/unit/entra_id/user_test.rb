@@ -4,6 +4,7 @@ class EntraId::UserTest < ActiveSupport::TestCase
   test "user creation with valid EntraId data" do
     entra_user = EntraId::User.new(
       oid: "12345678-1234-1234-1234-123456789012",
+      login: "john.doe@example.com",
       email: "john.doe@example.com",
       given_name: "John",
       surname: "Doe"
@@ -15,6 +16,7 @@ class EntraId::UserTest < ActiveSupport::TestCase
     end
 
     user = User.find_by(login: "john.doe@example.com")
+
     assert_not_nil user
     assert_equal "john.doe@example.com", user.login
     assert_equal "John", user.firstname
@@ -35,6 +37,7 @@ class EntraId::UserTest < ActiveSupport::TestCase
 
     entra_user = EntraId::User.new(
       oid: "12345678-1234-1234-1234-123456789012",
+      login: "new.email@example.com",
       email: "new.email@example.com",
       given_name: "NewFirst",
       surname: "NewLast"
@@ -64,6 +67,7 @@ class EntraId::UserTest < ActiveSupport::TestCase
 
     entra_user = EntraId::User.new(
       oid: "12345678-1234-1234-1234-123456789012",
+      login: "john.doe@example.com",
       email: "john.doe@example.com",
       given_name: "NewFirst",
       surname: "NewLast"
@@ -93,6 +97,7 @@ class EntraId::UserTest < ActiveSupport::TestCase
 
     entra_user = EntraId::User.new(
       oid: "12345678-1234-1234-1234-123456789012",
+      login: "john.doe@example.com",
       email: "john.doe@example.com",
       given_name: "NewFirst",
       surname: "NewLast"  
@@ -123,6 +128,7 @@ class EntraId::UserTest < ActiveSupport::TestCase
 
     entra_user = EntraId::User.new(
       oid: "old-oid-12345",
+      login: "user@example.com",
       email: "user@example.com",
       given_name: "NewGivenName",
       surname: "NewSurname"
@@ -144,6 +150,7 @@ class EntraId::UserTest < ActiveSupport::TestCase
     travel_to freeze_time do
       entra_user = EntraId::User.new(
         oid: "12345678-1234-1234-1234-123456789012",
+        login: "timestamp.test@example.com",
         email: "timestamp.test@example.com",
         given_name: "Timestamp",
         surname: "Test"
@@ -157,6 +164,9 @@ class EntraId::UserTest < ActiveSupport::TestCase
   end
 
   test "preserves existing Redmine-specific user data" do
+    expected_created_on = 2.years.ago
+    expected_last_login_on = 1.week.ago
+    
     existing_user = User.create!(
       login: "preserve.test@example.com",
       firstname: "OldFirst",
@@ -164,12 +174,13 @@ class EntraId::UserTest < ActiveSupport::TestCase
       mail: "preserve.test@example.com",
       status: User::STATUS_LOCKED,
       admin: true,
-      created_on: 2.years.ago,
-      last_login_on: 1.week.ago
+      created_on: expected_created_on,
+      last_login_on: expected_last_login_on
     )
 
     entra_user = EntraId::User.new(
       oid: "12345678-1234-1234-1234-123456789012",
+      login: "preserve.test@example.com",
       email: "preserve.test@example.com", 
       given_name: "NewFirst",
       surname: "NewLast"
@@ -186,7 +197,7 @@ class EntraId::UserTest < ActiveSupport::TestCase
     # Redmine-specific attributes should be preserved
     assert_equal User::STATUS_LOCKED, existing_user.status
     assert_equal true, existing_user.admin
-    assert_in_delta 2.years.ago, existing_user.created_on, 1.second
-    assert_in_delta 1.week.ago, existing_user.last_login_on, 1.second
+    assert_in_delta expected_created_on, existing_user.created_on, 1.second
+    assert_in_delta expected_last_login_on, existing_user.last_login_on, 1.second
   end
 end

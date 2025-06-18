@@ -12,7 +12,7 @@ class EntraId::DirectoryTest < ActiveSupport::TestCase
     }
   end
 
-  test "authenticates with client credentials flow" do
+  test "returns access token when client credentials authentication succeeds" do
     stub_request(:post, "https://login.microsoftonline.com/test-tenant-id/oauth2/v2.0/token")
       .with(
         body: {
@@ -33,12 +33,12 @@ class EntraId::DirectoryTest < ActiveSupport::TestCase
       )
 
     directory = EntraId::Directory.new
-    access_token = directory.authenticate
+    access_token = directory.send(:access_token)  # Private method
 
     assert_equal "test-access-token", access_token
   end
 
-  test "fetches users from Graph API" do
+  test "returns EntraId::User objects when fetching users from Graph API" do
     # Stub authentication
     stub_request(:post, "https://login.microsoftonline.com/test-tenant-id/oauth2/v2.0/token")
       .to_return(
@@ -89,7 +89,7 @@ class EntraId::DirectoryTest < ActiveSupport::TestCase
     assert_equal "jane.smith@example.com", second_user.email  # Should use userPrincipalName
   end
 
-  test "handles pagination with nextLink" do
+  test "fetches all users across multiple pages when API returns nextLink" do
     # Stub authentication
     stub_request(:post, "https://login.microsoftonline.com/test-tenant-id/oauth2/v2.0/token")
       .to_return(
@@ -145,7 +145,7 @@ class EntraId::DirectoryTest < ActiveSupport::TestCase
     assert_equal "user2@example.com", users[1].email
   end
 
-  test "yields users in batches" do
+  test "supports batching when iterating through users" do
     # Stub authentication
     stub_request(:post, "https://login.microsoftonline.com/test-tenant-id/oauth2/v2.0/token")
       .to_return(

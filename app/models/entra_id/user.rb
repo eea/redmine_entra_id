@@ -1,8 +1,9 @@
 class EntraId::User
-  attr_reader :oid, :email, :given_name, :surname
+  attr_reader :oid, :login, :email, :given_name, :surname
 
-  def initialize(oid:, email:, given_name:, surname:)
+  def initialize(oid:, login:, email:, given_name:, surname:)
     @oid = oid
+    @login = login
     @email = email
     @given_name = given_name
     @surname = surname
@@ -13,7 +14,7 @@ class EntraId::User
   end
 
   def preferred_username
-    email
+    login
   end
 
   def replicate_locally!

@@ -1,5 +1,6 @@
 class EntraId::CallbacksController < AccountController
   before_action :ensure_entra_id_enabled, :handle_oauth_errors, :validate_oauth_state, :set_entra_id_identity
+  after_action :cleanup_oauth_session
 
   def show
     user = User.find_by_identity(@identity)
@@ -27,6 +28,7 @@ class EntraId::CallbacksController < AccountController
       return unless params[:error]
 
       flash[:error] = params[:error_description]
+      cleanup_oauth_session
       redirect_to signin_path
     end
 
@@ -36,9 +38,11 @@ class EntraId::CallbacksController < AccountController
 
       if received_state.blank? || expected_state.blank?
         flash[:error] = "Invalid OAuth credentials. Authentication failed"
+        cleanup_oauth_session
         redirect_to signin_path
       elsif !ActiveSupport::SecurityUtils.secure_compare(received_state, expected_state)
         flash[:error] = "Invalid OAuth state. Authentication failed"
+        cleanup_oauth_session
         redirect_to signin_path
       end
     end
@@ -55,12 +59,20 @@ class EntraId::CallbacksController < AccountController
 
       if @identity.blank?
         flash[:error] = "Could not fetch identity from EntraID. Authentication failed."
+        cleanup_oauth_session
         redirect_to signin_path
       end
     rescue OAuth2::Error => e
       Rails.logger.error "OAuth2 errors: #{e.message}"
 
       flash[:error] = "Invalid OAuth token. Authentication failed."
+      cleanup_oauth_session
       redirect_to signin_path
+    end
+
+    def cleanup_oauth_session
+      session.delete(:entra_id_state)
+      session.delete(:entra_id_nonce)
+      session.delete(:entra_id_pkce_verifier)
     end
 end

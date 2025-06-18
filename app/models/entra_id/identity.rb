@@ -51,14 +51,11 @@ class EntraId::Identity
   def fetch_user_info
     uri = URI(IDENTITY_URL)
 
-    http = Net::HTTP.new(uri.host, uri.port)
-    http.use_ssl = true
-
-    request = Net::HTTP::Get.new(uri.request_uri)
-    request["Authorization"] = "Bearer #{@access_token}"
-    request["Accept"] = "application/json"
-
-    response = http.request(request)
+    client = EntraId::SecureHttpClient.new(uri)
+    response = client.get(uri.request_uri, {
+      "Authorization" => "Bearer #{@access_token}",
+      "Accept" => "application/json"
+    })
 
     if response.is_a?(Net::HTTPSuccess)
       JSON.parse(response.body)

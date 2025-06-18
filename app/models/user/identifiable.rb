@@ -6,6 +6,10 @@ module User::Identifiable
     scope :by_email, ->(address) { joins(:email_addresses).merge(EmailAddress.by_address(address)) }
 
     scope :by_email_or_login, ->(identifier) { by_email(identifier).or(User.by_login(identifier)) }
+
+    scope :not_admin, -> { where(admin: false) }
+    scope :identified, -> { where.not(oid: nil) }
+    scope :stale_since, ->(time) { where("synced_at IS NULL OR synced_at < ?", time) }
   end
 
   class_methods do
