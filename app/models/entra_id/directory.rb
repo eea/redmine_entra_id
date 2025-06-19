@@ -27,7 +27,7 @@ class EntraId::Directory
     end
 
     def make_token_request(uri)
-      client = EntraId::SecureHttpClient.new(uri)
+      client = EntraId::HttpClient.new(uri)
       body = URI.encode_www_form({
         "grant_type" => "client_credentials",
         "client_id" => EntraId.client_id,
@@ -55,7 +55,7 @@ class EntraId::Directory
     def fetch_page(access_token, url)
       uri = URI(url)
       
-      client = EntraId::SecureHttpClient.new(uri)
+      client = EntraId::HttpClient.new(uri)
       response = client.get(uri.request_uri, {
         "Authorization" => "Bearer #{access_token}",
         "Accept" => "application/json"

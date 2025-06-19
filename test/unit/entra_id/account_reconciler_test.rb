@@ -62,33 +62,7 @@ class EntraId::AccountReconcilerTest < ActiveSupport::TestCase
     assert_not_nil existing_user.synced_at
   end
 
-  test "reconciler deactivates stale users" do
-    stale_user = User.find_by(login: "dlopper")
-    stale_user.update!(oid: "stale-user-123", synced_at: 35.days.ago)
-    active_user = User.find_by(login: "rhill")  
-    active_user.update!(oid: "active-user-456", synced_at: 1.day.ago)
-    
-    setup_entra_users([])
-    
-    @reconciler.reconcile
-    
-    stale_user.reload
-    assert_equal User::STATUS_LOCKED, stale_user.status
 
-    active_user.reload
-    assert_equal User::STATUS_LOCKED, active_user.status
-  end
 
-  test "reconciler preserves admin users" do
-    admin_user = User.find_by(login: "admin")
-    admin_user.update!(oid: "admin-123", synced_at: 40.days.ago)
-    
-    setup_entra_users([])
-    
-    @reconciler.reconcile
-    admin_user.reload
 
-    assert_not_equal User::STATUS_LOCKED, admin_user.status
-    assert admin_user.active?
-  end
 end

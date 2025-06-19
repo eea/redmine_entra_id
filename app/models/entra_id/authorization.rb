@@ -92,7 +92,7 @@ class EntraId::Authorization
     def jwks
       uri = URI("https://#{HOST}/#{EntraId.tenant_id}/#{JWKS_PATH}")
 
-      client = EntraId::SecureHttpClient.new(uri)
+      client = EntraId::HttpClient.new(uri)
       response = client.get(uri.request_uri)
 
       if response.is_a?(Net::HTTPSuccess)

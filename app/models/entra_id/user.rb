@@ -24,6 +24,10 @@ class EntraId::User
     user.save
   end
 
+  def to_user_params
+    user_attributes
+  end
+
   private
 
     def user_attributes

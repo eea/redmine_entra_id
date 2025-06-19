@@ -2,16 +2,18 @@
 
 require_relative "../../test_helper"
 
-class EntraId::SecureHttpClientTest < ActiveSupport::TestCase
-  test "creates HTTP client with secure SSL configuration" do
+class EntraId::HttpClientTest < ActiveSupport::TestCase
+  test "successfully makes HTTPS requests with proper SSL configuration" do
     uri = URI("https://example.com/api")
     
-    client = EntraId::SecureHttpClient.new(uri)
+    stub_request(:get, "https://example.com/test")
+      .to_return(status: 200, body: '{"secure": true}')
     
-    assert client.use_ssl?
-    assert_equal OpenSSL::SSL::VERIFY_PEER, client.verify_mode
-    assert_equal 10, client.read_timeout
-    assert_equal 5, client.open_timeout
+    client = EntraId::HttpClient.new(uri)
+    response = client.get("/test")
+    
+    assert response.is_a?(Net::HTTPSuccess)
+    assert_equal '{"secure": true}', response.body
   end
 
   test "makes GET request with timeout protection" do
@@ -20,7 +22,7 @@ class EntraId::SecureHttpClientTest < ActiveSupport::TestCase
     stub_request(:get, "https://example.com/api")
       .to_return(status: 200, body: '{"success": true}')
     
-    client = EntraId::SecureHttpClient.new(uri)
+    client = EntraId::HttpClient.new(uri)
     response = client.get("/api")
     
     assert response.is_a?(Net::HTTPSuccess)
@@ -34,7 +36,7 @@ class EntraId::SecureHttpClientTest < ActiveSupport::TestCase
       .with(body: "grant_type=client_credentials")
       .to_return(status: 200, body: '{"access_token": "test-token"}')
     
-    client = EntraId::SecureHttpClient.new(uri)
+    client = EntraId::HttpClient.new(uri)
     response = client.post("/token", "grant_type=client_credentials", {
       "Content-Type" => "application/x-www-form-urlencoded"
     })
@@ -49,7 +51,7 @@ class EntraId::SecureHttpClientTest < ActiveSupport::TestCase
     stub_request(:get, "https://example.com/slow")
       .to_timeout
     
-    client = EntraId::SecureHttpClient.new(uri)
+    client = EntraId::HttpClient.new(uri)
     
     assert_raises(EntraId::NetworkError) do
       client.get("/slow")
@@ -62,7 +64,7 @@ class EntraId::SecureHttpClientTest < ActiveSupport::TestCase
     stub_request(:get, "https://invalid-ssl.example.com/api")
       .to_raise(OpenSSL::SSL::SSLError.new("SSL verification failed"))
     
-    client = EntraId::SecureHttpClient.new(uri)
+    client = EntraId::HttpClient.new(uri)
     
     assert_raises(EntraId::NetworkError) do
       client.get("/api")

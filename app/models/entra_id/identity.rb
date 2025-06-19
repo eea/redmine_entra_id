@@ -51,7 +51,7 @@ class EntraId::Identity
   def fetch_user_info
     uri = URI(IDENTITY_URL)
 
-    client = EntraId::SecureHttpClient.new(uri)
+    client = EntraId::HttpClient.new(uri)
     response = client.get(uri.request_uri, {
       "Authorization" => "Bearer #{@access_token}",
       "Accept" => "application/json"

@@ -5,8 +5,5 @@ namespace :entra_id do
     
     reconciler = EntraId::AccountReconciler.new
     reconciler.reconcile
-
-
-    reconciler.print_summary
   end
 end
