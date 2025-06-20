@@ -10,6 +10,9 @@ module User::Identifiable
     scope :not_admin, -> { where(admin: false) }
     scope :identified, -> { where.not(oid: nil) }
     scope :stale_since, ->(time) { where("synced_at IS NULL OR synced_at < ?", time) }
+
+    alias_method :delete_unsafe_attributes_without_entra_id, :delete_unsafe_attributes
+    alias_method :delete_unsafe_attributes, :delete_unsafe_attributes_with_entra_id
   end
 
   class_methods do
@@ -48,7 +51,16 @@ module User::Identifiable
     raise
   end
 
-  def entra_id_authenticated?
+  def authenticated_via_entra?
     oid.present?
+  end
+
+  def delete_unsafe_attributes_with_entra_id(attrs, user = User.current)
+    # Remove protected fields for Entra ID users
+    if authenticated_via_entra?
+      attrs = attrs.except('firstname', 'lastname', 'mail')
+    end
+    
+    delete_unsafe_attributes_without_entra_id(attrs, user)
   end
 end

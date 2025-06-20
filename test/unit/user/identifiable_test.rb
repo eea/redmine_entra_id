@@ -95,16 +95,16 @@ class User::IdentifiableTest < ActiveSupport::TestCase
 
   test "user is EntraId authenticated when oid is present" do
     @user.update!(oid: "test-oid-123")
-    assert @user.entra_id_authenticated?
+    assert @user.authenticated_via_entra?
   end
 
   test "user is not EntraId authenticated when oid is blank" do
     @user.update!(oid: nil)
-    refute @user.entra_id_authenticated?
+    refute @user.authenticated_via_entra?
   end
 
   test "user is not EntraId authenticated when oid is empty string" do
     @user.update!(oid: "")
-    refute @user.entra_id_authenticated?
+    refute @user.authenticated_via_entra?
   end
 end

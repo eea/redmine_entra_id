@@ -1,15 +1,2 @@
-# English strings go here for Rails i18n
 en:
-  entra_id_enabled: Enable
-  entra_id_enabled_info: Enable login using EntraID
-  entra_id_exclusive: Exclusive
-  entra_id_exclusive_info: Disable normal login and only allow EntraID-based login. Self-registration needs to be manually disabled.
-  entra_id_client_id: Application (client) ID
-  entra_id_client_id_info: Application ID
-  entra_id_client_secret: Client secret
-  entra_id_client_secret_info: Application password
-  entra_id_tenant_id: Directory (tenant) ID
-  entra_id_tenant_id_info: Directory ID
-  entra_id_login_with: Login with EntraID
-  field_entra_id_oid: EntraID OID
-  field_entra_id_synced_at: EntraID Sync time
+  text_entra_id_managed_fields: "Name and email are managed by your organization and cannot be changed here."
