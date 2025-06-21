@@ -1,50 +1,20 @@
 class EntraId::Directory
-  GRAPH_API_BASE = "https://graph.microsoft.com/v1.0"
-  TOKEN_ENDPOINT_BASE = "https://login.microsoftonline.com"
-  OAUTH_SCOPE = "https://graph.microsoft.com/.default"
-  USERS_ENDPOINT = "#{GRAPH_API_BASE}/users"
-
-  def self.token_endpoint_uri
-    URI("#{TOKEN_ENDPOINT_BASE}/#{EntraId.tenant_id}/oauth2/v2.0/token")
-  end
-
   def users
-    @users ||= fetch_users(access_token)
+    @users ||= fetch_all_users
   end
 
   private
 
     def access_token
-      uri = self.class.token_endpoint_uri
-      response = make_token_request(uri)
-      
-      if response.is_a?(Net::HTTPSuccess)
-        token_data = JSON.parse(response.body)
-        token_data["access_token"]
-      else
-        raise "Authentication failed: #{response.code} #{response.body}"
-      end
+      @access_token ||= AccessToken.new(grant_type: "client_credentials", scope: EntraId::GRAPH_OAUTH_SCOPE)
     end
 
-    def make_token_request(uri)
-      client = EntraId::HttpClient.new(uri)
-      body = URI.encode_www_form({
-        "grant_type" => "client_credentials",
-        "client_id" => EntraId.client_id,
-        "client_secret" => EntraId.client_secret,
-        "scope" => OAUTH_SCOPE
-      })
-      client.post(uri.request_uri, body, {
-        "Content-Type" => "application/x-www-form-urlencoded"
-      })
-    end
-
-    def fetch_users(access_token)
+    def fetch_all_users
       all_users = []
-      next_link = USERS_ENDPOINT
+      next_link = EntraId::GRAPH_USERS_ENDPOINT
       
       while next_link
-        data = fetch_page(access_token, next_link)
+        data = fetch_page(next_link)
         all_users.concat(parse_users(data["value"] || []))
         next_link = data["@odata.nextLink"]
       end
@@ -52,20 +22,24 @@ class EntraId::Directory
       all_users
     end
 
-    def fetch_page(access_token, url)
+    def fetch_page(url)
       uri = URI(url)
       
       client = EntraId::HttpClient.new(uri)
       response = client.get(uri.request_uri, {
-        "Authorization" => "Bearer #{access_token}",
+        "Authorization" => "Bearer #{access_token.value}",
         "Accept" => "application/json"
       })
-      
+        
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)
       else
-        raise "Failed to fetch users: #{response.code} #{response.body}"
+        Rails.logger.error "Failed to fetch users page: #{response.code} #{response.body}"
+        raise EntraId::NetworkError, "Failed to fetch users: #{response.code}"
       end
+    rescue JSON::ParserError => e
+      Rails.logger.error "Failed to parse users response: #{e.message}"
+      raise EntraId::NetworkError, "Invalid users response"
     end
 
     def parse_users(user_data)

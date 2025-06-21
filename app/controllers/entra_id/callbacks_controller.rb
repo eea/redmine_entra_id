@@ -1,4 +1,8 @@
 class EntraId::CallbacksController < AccountController
+  rescue_from EntraId::NetworkError, with: :handle_network_error
+  rescue_from JWT::VerificationError, with: :handle_jwt_error
+  rescue_from OAuth2::Error, with: :handle_oauth_error
+
   before_action :ensure_entra_id_enabled, :handle_oauth_errors, :validate_oauth_state, :set_entra_id_identity
   after_action :cleanup_oauth_session
 
@@ -37,13 +41,9 @@ class EntraId::CallbacksController < AccountController
       expected_state = session[:entra_id_state]
 
       if received_state.blank? || expected_state.blank?
-        flash[:error] = "Invalid OAuth credentials. Authentication failed"
-        cleanup_oauth_session
-        redirect_to signin_path
+        authentication_failed("Invalid OAuth credentials. Authentication failed")
       elsif !ActiveSupport::SecurityUtils.secure_compare(received_state, expected_state)
-        flash[:error] = "Invalid OAuth state. Authentication failed"
-        cleanup_oauth_session
-        redirect_to signin_path
+        authentication_failed("Invalid OAuth state. Authentication failed")
       end
     end
 
@@ -58,14 +58,27 @@ class EntraId::CallbacksController < AccountController
       @identity = authorization.exchange_code_for_identity(code: params[:code])
 
       if @identity.blank?
-        flash[:error] = "Could not fetch identity from EntraID. Authentication failed."
-        cleanup_oauth_session
-        redirect_to signin_path
+        authentication_failed("Could not fetch identity from EntraID. Authentication failed.")
       end
-    rescue OAuth2::Error => e
-      Rails.logger.error "OAuth2 errors: #{e.message}"
+    end
 
-      flash[:error] = "Invalid OAuth token. Authentication failed."
+    def handle_network_error(exception)
+      Rails.logger.error "EntraId network error: #{exception.message}"
+      authentication_failed("Network error during authentication. Please try again.")
+    end
+
+    def handle_jwt_error(exception)
+      Rails.logger.error "EntraId JWT verification error: #{exception.message}"
+      authentication_failed("Invalid authentication token. Authentication failed.")
+    end
+
+    def handle_oauth_error(exception)
+      Rails.logger.error "EntraId OAuth2 error: #{exception.message}"
+      authentication_failed("Invalid OAuth token. Authentication failed.")
+    end
+
+    def authentication_failed(message)
+      flash[:error] = message
       cleanup_oauth_session
       redirect_to signin_path
     end

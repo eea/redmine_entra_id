@@ -35,7 +35,7 @@ class EntraId::DirectoryTest < ActiveSupport::TestCase
     directory = EntraId::Directory.new
     access_token = directory.send(:access_token)  # Private method
 
-    assert_equal "test-access-token", access_token
+    assert_equal "test-access-token", access_token.value
   end
 
   test "returns EntraId::User objects when fetching users from Graph API" do
@@ -43,7 +43,7 @@ class EntraId::DirectoryTest < ActiveSupport::TestCase
     stub_request(:post, "https://login.microsoftonline.com/test-tenant-id/oauth2/v2.0/token")
       .to_return(
         status: 200,
-        body: { "access_token" => "test-access-token" }.to_json,
+        body: { "access_token" => "test-access-token", "expires_in" => 3600 }.to_json,
         headers: { "Content-Type" => "application/json" }
       )
 
@@ -94,7 +94,7 @@ class EntraId::DirectoryTest < ActiveSupport::TestCase
     stub_request(:post, "https://login.microsoftonline.com/test-tenant-id/oauth2/v2.0/token")
       .to_return(
         status: 200,
-        body: { "access_token" => "test-access-token" }.to_json,
+        body: { "access_token" => "test-access-token", "expires_in" => 3600 }.to_json,
         headers: { "Content-Type" => "application/json" }
       )
 
@@ -150,7 +150,7 @@ class EntraId::DirectoryTest < ActiveSupport::TestCase
     stub_request(:post, "https://login.microsoftonline.com/test-tenant-id/oauth2/v2.0/token")
       .to_return(
         status: 200,
-        body: { "access_token" => "test-access-token" }.to_json,
+        body: { "access_token" => "test-access-token", "expires_in" => 3600 }.to_json,
         headers: { "Content-Type" => "application/json" }
       )
 

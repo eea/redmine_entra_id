@@ -2,14 +2,10 @@ module User::Identifiable
   extend ActiveSupport::Concern
 
   included do
-    scope :by_login, ->(login) { where("LOWER(login) = LOWER(?)", login) }
-    scope :by_email, ->(address) { joins(:email_addresses).merge(EmailAddress.by_address(address)) }
-
-    scope :by_email_or_login, ->(identifier) { by_email(identifier).or(User.by_login(identifier)) }
-
-    scope :not_admin, -> { where(admin: false) }
+    # EntraID-specific scopes
     scope :identified, -> { where.not(oid: nil) }
     scope :stale_since, ->(time) { where("synced_at IS NULL OR synced_at < ?", time) }
+    
 
     alias_method :delete_unsafe_attributes_without_entra_id, :delete_unsafe_attributes
     alias_method :delete_unsafe_attributes, :delete_unsafe_attributes_with_entra_id
@@ -18,7 +14,10 @@ module User::Identifiable
   class_methods do
     def find_by_identity(identity)
       user = find_by(oid: identity.id)
-      user.present? ? user : by_email_or_login(identity.preferred_username).first
+      return user if user.present?
+      
+      # Try finding by email first, then by login
+      find_by_mail(identity.preferred_username) || find_by_login(identity.preferred_username)
     end
 
     def create_from_entra_user(entra_user, sync_time)

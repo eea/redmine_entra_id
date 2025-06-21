@@ -1,12 +1,4 @@
 class EntraId::Authorization
-  HOST = "login.microsoftonline.com"
-
-  AUTHORIZE_PATH = "oauth2/v2.0/authorize"
-  TOKEN_PATH = "oauth2/v2.0/token"
-  JWKS_PATH = "discovery/v2.0/keys"
-
-  SCOPE = "openid profile email"
-  CHALLENGE_METHOD = "S256"
 
   attr_reader :code_verifier, :state, :nonce, :redirect_uri
 
@@ -25,12 +17,12 @@ class EntraId::Authorization
   def url
     client.auth_code.authorize_url(
       redirect_uri: redirect_uri,
-      scope: SCOPE,
+      scope: EntraId::OAUTH_SCOPE,
       response_mode: "query",
       state: state,
       nonce: nonce,
       code_challenge: code_challenge,
-      code_challenge_method: CHALLENGE_METHOD,
+      code_challenge_method: EntraId::OAUTH_CHALLENGE_METHOD,
       prompt: "select_account"
     )
   end
@@ -58,9 +50,9 @@ class EntraId::Authorization
       @client ||= OAuth2::Client.new(
         EntraId.client_id,
         EntraId.client_secret,
-        site: "https://#{HOST}",
-        authorize_url: "#{EntraId.tenant_id}/#{AUTHORIZE_PATH}",
-        token_url: "#{EntraId.tenant_id}/#{TOKEN_PATH}",
+        site: EntraId.oauth_base_url,
+        authorize_url: EntraId.authorize_path,
+        token_url: EntraId.token_endpoint_path,
         auth_scheme: :request_body
       )
     end
@@ -76,12 +68,12 @@ class EntraId::Authorization
       data, _header = JWT.decode(
         id_token, nil, true,
         {
-          algorithms: [ "RS256" ],
+          algorithms: ["RS256"],
           jwks: jwks,
           verify_aud: true,
           aud: EntraId.client_id,
           verify_iss: true,
-          iss: "https://#{HOST}/#{EntraId.tenant_id}/v2.0",
+          iss: EntraId.issuer_url,
           verify_iat: true
         }
       )
@@ -90,19 +82,24 @@ class EntraId::Authorization
     end
 
     def jwks
-      uri = URI("https://#{HOST}/#{EntraId.tenant_id}/#{JWKS_PATH}")
+      Rails.cache.fetch("entra_id_jwks", expires_in: 1.hour) do
+        fetch_jwks_from_microsoft
+      end
+    end
 
+    def fetch_jwks_from_microsoft
+      uri = URI(EntraId.jwks_url)
       client = EntraId::HttpClient.new(uri)
       response = client.get(uri.request_uri)
 
       if response.is_a?(Net::HTTPSuccess)
         JSON.parse(response.body)
       else
+        Rails.logger.error "Failed to fetch JWKS: #{response.code} #{response.body}"
         nil
       end
-    rescue JSON::ParserError
-      Rails.logger.error "Failed to parse #{response.body}"
-
+    rescue JSON::ParserError => e
+      Rails.logger.error "Failed to parse JWKS response: #{e.message}"
       nil
     end
 end

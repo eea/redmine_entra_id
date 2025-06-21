@@ -1,16 +1,19 @@
 # frozen_string_literal: true
 
 class EntraId::HttpClient
-  DEFAULT_READ_TIMEOUT = 10
-  DEFAULT_OPEN_TIMEOUT = 5
+  include ActiveSupport::Configurable
 
-  def initialize(base_uri, read_timeout: DEFAULT_READ_TIMEOUT, open_timeout: DEFAULT_OPEN_TIMEOUT)
+  config_accessor :read_timeout
+  config_accessor :open_timeout
+
+  self.read_timeout = 10
+  self.open_timeout = 5
+
+  attr_reader :base_uri, :http
+
+  def initialize(base_uri, read_timeout: self.class.read_timeout, open_timeout: self.class.open_timeout)
     @base_uri = base_uri
-    @http = Net::HTTP.new(@base_uri.host, @base_uri.port)
-    @http.use_ssl = true if @base_uri.scheme == 'https'
-    @http.verify_mode = OpenSSL::SSL::VERIFY_PEER
-    @http.read_timeout = read_timeout
-    @http.open_timeout = open_timeout
+    @http = configure_http_client(read_timeout, open_timeout)
   end
 
   def get(path, headers = {})
@@ -23,19 +26,36 @@ class EntraId::HttpClient
     make_request(request, headers)
   end
 
-
-
   private
+
+  def configure_http_client(read_timeout, open_timeout)
+    http = Net::HTTP.new(base_uri.host, base_uri.port)
+
+    http.use_ssl = true
+    http.verify_mode = OpenSSL::SSL::VERIFY_PEER
+    http.read_timeout = read_timeout
+    http.open_timeout = open_timeout
+
+    http
+  end
 
   def make_request(request, headers = {})
     headers.each { |key, value| request[key] = value }
     
-    @http.request(request)
+    Rails.logger.debug "EntraId HTTP #{request.method} #{base_uri}#{request.path}"
+    
+    response = http.request(request)
+    
+    Rails.logger.debug "EntraId HTTP Response: #{response.code} #{response.message}"
+    response
   rescue Net::ReadTimeout, Net::OpenTimeout, Timeout::Error => e
+    Rails.logger.error "EntraId HTTP timeout: #{e.message}"
     raise EntraId::NetworkError, "Request timeout: #{e.message}"
   rescue OpenSSL::SSL::SSLError => e
+    Rails.logger.error "EntraId SSL error: #{e.message}"
     raise EntraId::NetworkError, "SSL verification failed: #{e.message}"
   rescue StandardError => e
+    Rails.logger.error "EntraId network error: #{e.message}"
     raise EntraId::NetworkError, "Network error: #{e.message}"
   end
 end
