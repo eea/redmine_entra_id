@@ -2,13 +2,13 @@ require_relative "../../test_helper"
 
 class EntraId::UserTest < ActiveSupport::TestCase
   test "user creation with valid EntraId data" do
-    entra_user = EntraId::User.new(
-      oid: "12345678-1234-1234-1234-123456789012",
-      login: "john.doe@example.com",
-      email: "john.doe@example.com",
-      given_name: "John",
+    entra_user = EntraId::User.new({
+      id: "12345678-1234-1234-1234-123456789012",
+      userPrincipalName: "john.doe@example.com",
+      mail: "john.doe@example.com",
+      givenName: "John",
       surname: "Doe"
-    )
+    }.with_indifferent_access)
 
     assert_difference "User.count", 1 do
       result = entra_user.replicate_locally!
@@ -35,13 +35,13 @@ class EntraId::UserTest < ActiveSupport::TestCase
       oid: "12345678-1234-1234-1234-123456789012"
     )
 
-    entra_user = EntraId::User.new(
-      oid: "12345678-1234-1234-1234-123456789012",
-      login: "new.email@example.com",
-      email: "new.email@example.com",
-      given_name: "NewFirst",
+    entra_user = EntraId::User.new({
+      id: "12345678-1234-1234-1234-123456789012",
+      userPrincipalName: "new.email@example.com",
+      mail: "new.email@example.com",
+      givenName: "NewFirst",
       surname: "NewLast"
-    )
+    }.with_indifferent_access)
 
     assert_no_difference "User.count" do
       result = entra_user.replicate_locally!
@@ -65,13 +65,13 @@ class EntraId::UserTest < ActiveSupport::TestCase
       mail: "john.doe@example.com"
     )
 
-    entra_user = EntraId::User.new(
-      oid: "12345678-1234-1234-1234-123456789012",
-      login: "john.doe@example.com",
-      email: "john.doe@example.com",
-      given_name: "NewFirst",
+    entra_user = EntraId::User.new({
+      id: "12345678-1234-1234-1234-123456789012",
+      userPrincipalName: "john.doe@example.com",
+      mail: "john.doe@example.com",
+      givenName: "NewFirst",
       surname: "NewLast"
-    )
+    }.with_indifferent_access)
 
     assert_no_difference "User.count" do
       result = entra_user.replicate_locally!
@@ -95,13 +95,13 @@ class EntraId::UserTest < ActiveSupport::TestCase
       mail: "different.email@example.com"
     )
 
-    entra_user = EntraId::User.new(
-      oid: "12345678-1234-1234-1234-123456789012",
-      login: "john.doe@example.com",
-      email: "john.doe@example.com",
-      given_name: "NewFirst",
+    entra_user = EntraId::User.new({
+      id: "12345678-1234-1234-1234-123456789012",
+      userPrincipalName: "john.doe@example.com",
+      mail: "john.doe@example.com",
+      givenName: "NewFirst",
       surname: "NewLast"  
-    )
+    }.with_indifferent_access)
 
     assert_no_difference "User.count" do
       result = entra_user.replicate_locally!
@@ -126,13 +126,13 @@ class EntraId::UserTest < ActiveSupport::TestCase
       oid: "old-oid-12345"
     )
 
-    entra_user = EntraId::User.new(
-      oid: "old-oid-12345",
-      login: "user@example.com",
-      email: "user@example.com",
-      given_name: "NewGivenName",
+    entra_user = EntraId::User.new({
+      id: "old-oid-12345",
+      userPrincipalName: "user@example.com",
+      mail: "user@example.com",
+      givenName: "NewGivenName",
       surname: "NewSurname"
-    )
+    }.with_indifferent_access)
 
     entra_user.replicate_locally!
     existing_user.reload
@@ -148,13 +148,13 @@ class EntraId::UserTest < ActiveSupport::TestCase
     freeze_time = Time.parse("2023-01-15 10:30:00 UTC")
     
     travel_to freeze_time do
-      entra_user = EntraId::User.new(
-        oid: "12345678-1234-1234-1234-123456789012",
-        login: "timestamp.test@example.com",
-        email: "timestamp.test@example.com",
-        given_name: "Timestamp",
+      entra_user = EntraId::User.new({
+        id: "12345678-1234-1234-1234-123456789012",
+        userPrincipalName: "timestamp.test@example.com",
+        mail: "timestamp.test@example.com",
+        givenName: "Timestamp",
         surname: "Test"
-      )
+      }.with_indifferent_access)
 
       entra_user.replicate_locally!
       
@@ -178,13 +178,13 @@ class EntraId::UserTest < ActiveSupport::TestCase
       last_login_on: expected_last_login_on
     )
 
-    entra_user = EntraId::User.new(
-      oid: "12345678-1234-1234-1234-123456789012",
-      login: "preserve.test@example.com",
-      email: "preserve.test@example.com", 
-      given_name: "NewFirst",
+    entra_user = EntraId::User.new({
+      id: "12345678-1234-1234-1234-123456789012",
+      userPrincipalName: "preserve.test@example.com",
+      mail: "preserve.test@example.com", 
+      givenName: "NewFirst",
       surname: "NewLast"
-    )
+    }.with_indifferent_access)
 
     entra_user.replicate_locally!
     existing_user.reload
@@ -200,4 +200,40 @@ class EntraId::UserTest < ActiveSupport::TestCase
     assert_in_delta expected_created_on, existing_user.created_on, 1.second
     assert_in_delta expected_last_login_on, existing_user.last_login_on, 1.second
   end
+
+  test "falls back to displayName when givenName and surname are missing" do
+    entra_user = EntraId::User.new({
+      id: "12345678-1234-1234-1234-123456789012",
+      userPrincipalName: "john.doe@example.com",
+      mail: "john.doe@example.com",
+      displayName: "John Doe"
+    }.with_indifferent_access)
+
+    assert_equal "John", entra_user.given_name
+    assert_equal "Doe", entra_user.surname
+  end
+
+  test "falls back to displayName with single name" do
+    entra_user = EntraId::User.new({
+      id: "12345678-1234-1234-1234-123456789012",
+      userPrincipalName: "john@example.com",
+      mail: "john@example.com",
+      displayName: "John"
+    }.with_indifferent_access)
+
+    assert_equal "John", entra_user.given_name
+    assert_equal "User", entra_user.surname
+  end
+
+  test "falls back to Unknown User when no name information available" do
+    entra_user = EntraId::User.new({
+      id: "12345678-1234-1234-1234-123456789012",
+      userPrincipalName: "unknown@example.com",
+      mail: "unknown@example.com"
+    }.with_indifferent_access)
+
+    assert_equal "Unknown", entra_user.given_name
+    assert_equal "User", entra_user.surname
+  end
+
 end

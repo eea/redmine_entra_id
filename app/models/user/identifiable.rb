@@ -23,8 +23,7 @@ module User::Identifiable
     def create_from_entra_user(entra_user, sync_time)
       user = create!(entra_user.to_user_params.merge(
         status: User::STATUS_ACTIVE,
-        synced_at: sync_time,
-        auth_source_id: 1
+        synced_at: sync_time
       ))
       Rails.logger.info "Created user: #{user.login} (#{entra_user.oid})"
       user
@@ -41,8 +40,7 @@ module User::Identifiable
   def sync_from_entra_user(entra_user, sync_time)
     update!(entra_user.to_user_params.except(:login).merge(
       status: User::STATUS_ACTIVE,
-      synced_at: sync_time,
-      auth_source_id: 1
+      synced_at: sync_time
     ))
     Rails.logger.info "Updated user: #{login} (#{entra_user.oid})"
   rescue => e

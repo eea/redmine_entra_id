@@ -15,11 +15,11 @@ class EntraId::Identity
   end
 
   def first_name
-    user_info["givenName"]
+    nametag.first_name
   end
 
   def last_name
-    user_info["surname"]
+    nametag.last_name
   end
 
   def to_user_params
@@ -38,6 +38,14 @@ class EntraId::Identity
   end
 
   private
+
+  def nametag
+    @nametag ||= EntraId::Nametag.new(
+      given_name: user_info["givenName"],
+      surname: user_info["surname"],
+      display_name: user_info["displayName"]
+    )
+  end
 
   def fetch_user_info
     uri = URI(EntraId::GRAPH_IDENTITY_URL)

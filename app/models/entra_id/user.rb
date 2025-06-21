@@ -1,20 +1,35 @@
 class EntraId::User
-  attr_reader :oid, :login, :email, :given_name, :surname
+  def initialize(payload)
+    @payload = payload
+  end
 
-  def initialize(oid:, login:, email:, given_name:, surname:)
-    @oid = oid
-    @login = login
-    @email = email
-    @given_name = given_name
-    @surname = surname
+
+  def oid
+    @payload[:id]
   end
 
   def id
     oid
   end
 
+  def login
+    @payload[:userPrincipalName]
+  end
+
   def preferred_username
     login
+  end
+
+  def email
+    @payload[:mail] || @payload[:userPrincipalName]
+  end
+
+  def given_name
+    nametag.first_name
+  end
+
+  def surname
+    nametag.last_name
   end
 
   def replicate_locally!
@@ -29,6 +44,14 @@ class EntraId::User
   end
 
   private
+
+    def nametag
+      @nametag ||= EntraId::Nametag.new(
+        given_name: @payload[:givenName],
+        surname: @payload[:surname],
+        display_name: @payload[:displayName]
+      )
+    end
 
     def user_attributes
       {

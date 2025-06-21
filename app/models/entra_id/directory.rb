@@ -44,13 +44,7 @@ class EntraId::Directory
 
     def parse_users(user_data)
       user_data.map do |user_json|
-        EntraId::User.new(
-          oid: user_json["id"],
-          login: user_json["userPrincipalName"],
-          email: user_json["mail"] || user_json["userPrincipalName"],
-          given_name: user_json["givenName"],
-          surname: user_json["surname"]
-        )
+        EntraId::User.new(user_json.with_indifferent_access)
       end
     end
 end
