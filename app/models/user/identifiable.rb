@@ -17,7 +17,7 @@ module User::Identifiable
       return user if user.present?
       
       # Try finding by email first, then by login
-      find_by_mail(identity.preferred_username) || find_by_login(identity.preferred_username)
+      find_by_mail(identity.email) || find_by_login(identity.email)
     end
 
     def create_from_entra_user(entra_user, sync_time)
