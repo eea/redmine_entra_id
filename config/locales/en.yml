@@ -12,3 +12,5 @@ en:
   entra_id_client_secret_info: "Client secret value from Azure app registration"
   entra_id_tenant_id: "Tenant ID"
   entra_id_tenant_id_info: "Directory (tenant) ID of your Azure organization"
+  field_entra_id_oid: EntraID OID
+  field_entra_id_synced_at: EntraID Sync Time
