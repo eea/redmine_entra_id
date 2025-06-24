@@ -5,6 +5,7 @@ gem "oauth2"
 
 group :development, :test do
   gem "webmock"
+  gem "minitest-reporters"
 end
 
 group :development do
