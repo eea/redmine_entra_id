@@ -4,20 +4,25 @@ class EntraId::AccountReconciler
   def initialize
     @directory = EntraId::Directory.new
     @sync_time = Time.current.change(usec: 0)
+
+    @errors = []
   end
 
   def reconcile
     entra_users = directory.users
-    Rails.logger.info "Starting EntraId user synchronization for #{entra_users.count} users"
-    
-    entra_users.each do |entra_user|
-      process_entra_user(entra_user)
-    end
-    
-    Rails.logger.info "EntraId synchronization completed"
+
+    puts "[EntraID] Starting EntraId user synchronization for #{entra_users.count} users"
+    entra_users.each { |entra_user| process_entra_user(entra_user) }; puts ""
+    puts "[EntraId] EntraId synchronization completed"
+
+    print_errors
   end
 
   private
+
+  def print_errors
+    @errors.each { |error| puts "Failed to process #{error[:login]} (#{error[:oid]}): #{error[:message]}}" }
+  end
 
   def process_entra_user(entra_user)
     local_user = User.find_by_identity(entra_user)
@@ -27,8 +32,11 @@ class EntraId::AccountReconciler
     else
       create_new_user(entra_user)
     end
+     
+    print "."
   rescue => e
-    Rails.logger.error "Failed to process EntraId user #{entra_user.email}: #{e.message}"
+    @errors << { login: entra_user.login, oid: entra_user.id, message: e.message }
+    print "E"
   end
 
   def sync_existing_user(local_user, entra_user)

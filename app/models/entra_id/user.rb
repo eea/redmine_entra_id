@@ -3,7 +3,6 @@ class EntraId::User
     @payload = payload
   end
 
-
   def oid
     @payload[:id]
   end

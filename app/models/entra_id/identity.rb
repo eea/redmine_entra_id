@@ -22,6 +22,10 @@ class EntraId::Identity
     nametag.last_name
   end
 
+  def email
+    preferred_username
+  end
+
   def to_user_params
     {
       login: preferred_username,
