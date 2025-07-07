@@ -41,7 +41,7 @@ class User::IdentifiableTest < ActiveSupport::TestCase
 
     identity = mock("identity")
     identity.stubs(:id).returns("test-oid-123")
-    identity.stubs(:preferred_username).returns("other@example.com")
+    identity.stubs(:email).returns("other@example.com")
 
     found_user = User.find_by_identity(identity)
     assert_equal user, found_user
@@ -52,7 +52,7 @@ class User::IdentifiableTest < ActiveSupport::TestCase
     
     identity = mock("identity")
     identity.stubs(:id).returns("non-existent-oid")
-    identity.stubs(:preferred_username).returns("jsmith@somenet.foo")
+    identity.stubs(:email).returns("jsmith@somenet.foo")
 
     found_user = User.find_by_identity(identity)
     assert_equal user, found_user
@@ -61,7 +61,7 @@ class User::IdentifiableTest < ActiveSupport::TestCase
   test "user not found when OID or email don't match" do
     identity = mock("identity")
     identity.stubs(:id).returns("non-existent-oid")
-    identity.stubs(:preferred_username).returns("nonexistent@example.com")
+    identity.stubs(:email).returns("nonexistent@example.com")
 
     found_user = User.find_by_identity(identity)
     assert_nil found_user
