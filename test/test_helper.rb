@@ -6,5 +6,9 @@ require "webmock/minitest"
 
 require_relative "support/oauth_test_helper"
 require_relative "support/entra_id_directory_helper"
+require_relative "support/entra_id_env_helper"
 
 WebMock.disable_net_connect!(allow_localhost: true)
+
+# Include the environment helper in all tests
+ActiveSupport::TestCase.include(EntraIdEnvHelper)

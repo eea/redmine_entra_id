@@ -7,10 +7,7 @@ class EntraId::CallbacksControllerTest < Redmine::IntegrationTest
 
   setup do
     Setting.plugin_entra_id = {
-      "enabled" => true,
-      "client_id" => "test-client-id",
-      "client_secret" => EntraId.encrypt_client_secret("test-client-secret"),
-      "tenant_id" => "test-tenant-id"
+      "enabled" => true
     }.with_indifferent_access
   end
 

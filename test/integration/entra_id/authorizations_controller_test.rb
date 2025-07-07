@@ -5,10 +5,7 @@ require_relative "../../test_helper"
 class EntraId::AuthorizationsControllerTest < ActionDispatch::IntegrationTest
   test "clicking entra_id button initiates oauth flow" do
     Setting.plugin_entra_id = {
-      enabled: true,
-      client_id: "test-client-id",
-      client_secret: EntraId.encrypt_client_secret("test-secret-123"),
-      tenant_id: "test-tenant-id"
+      enabled: true
     }
     
     get new_entra_id_authorization_path
@@ -35,10 +32,7 @@ class EntraId::AuthorizationsControllerTest < ActionDispatch::IntegrationTest
 
   test "redirects to login when plugin is disabled" do
     Setting.plugin_entra_id = {
-      enabled: false,
-      client_id: "test-client-id",
-      client_secret: EntraId.encrypt_client_secret("test-secret-123"),
-      tenant_id: "test-tenant-id"
+      enabled: false
     }
 
     get new_entra_id_authorization_path
@@ -48,11 +42,9 @@ class EntraId::AuthorizationsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "redirects to login when client_secret is missing" do
+    ENV.delete("ENTRA_ID_CLIENT_SECRET")
     Setting.plugin_entra_id = {
-      enabled: true,
-      client_id: "test-client-id",
-      client_secret: nil,
-      tenant_id: "test-tenant-id"
+      enabled: true
     }
 
     get new_entra_id_authorization_path

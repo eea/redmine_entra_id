@@ -2,13 +2,9 @@ require_relative "../../test_helper"
 
 class EntraId::DirectoryTest < ActiveSupport::TestCase
   setup do
-    encrypted_secret = EntraId.encrypt_client_secret("test-client-secret")
     Setting.plugin_entra_id = {
       enabled: true,
-      exclusive: false,
-      client_id: "test-client-id",
-      client_secret: encrypted_secret,
-      tenant_id: "test-tenant-id"
+      exclusive: false
     }
   end
 
@@ -18,7 +14,7 @@ class EntraId::DirectoryTest < ActiveSupport::TestCase
         body: {
           "grant_type" => "client_credentials",
           "client_id" => "test-client-id",
-          "client_secret" => "test-client-secret",
+          "client_secret" => "test-secret-123",
           "scope" => "https://graph.microsoft.com/.default"
         }
       )

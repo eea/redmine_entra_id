@@ -27,12 +27,11 @@ module EntraId
     end
 
     def client_id
-      settings[:client_id]
+      ENV["ENTRA_ID_CLIENT_ID"]
     end
 
     def client_secret
-      raw_secret = settings[:client_secret]
-      raw_secret.present? ? decrypt_client_secret(raw_secret) : ""
+      ENV["ENTRA_ID_CLIENT_SECRET"]
     end
 
     def masked_client_secret
@@ -40,20 +39,13 @@ module EntraId
     end
 
     def tenant_id
-      settings[:tenant_id]
+      ENV["ENTRA_ID_TENANT_ID"]
     end
 
     def valid?
       enabled? && client_id.present? && client_secret.present? && tenant_id.present?
     end
 
-    def encrypt_client_secret(value)
-      encryptor.encrypt_and_sign(value)
-    end
-
-    def raw_client_secret
-      settings[:client_secret]
-    end
 
     # URL Helpers
     def oauth_base_url
@@ -88,19 +80,5 @@ module EntraId
       "#{oauth_base_url}/#{tenant_id}/v2.0"
     end
 
-    private
-
-      def encryptor
-        @encryptor ||= ActiveSupport::MessageEncryptor.new(
-          Rails.application.key_generator.generate_key("entra_id_client_secret", 32)
-        )
-      end
-
-      def decrypt_client_secret(payload)
-        encryptor.decrypt_and_verify(payload)
-      rescue ActiveSupport::MessageVerifier::InvalidSignature, ActiveSupport::MessageEncryptor::InvalidMessage
-        Rails.logger.error "Failed to decrypt EntraId client_secret - invalid encryption"
-        ""
-      end
   end
 end
