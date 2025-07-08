@@ -10,16 +10,16 @@
 </p>
 <p>
     <label><%= l(:entra_id_client_id) %></label>
-    <strong><code><%= EntraId.client_id || "(not set)" %></code></strong>
-    <em class="info">Set via ENTRA_ID_CLIENT_ID environment variable</em>
+    <strong><code><%= EntraId.client_id || l(:entra_id_not_set) %></code></strong>
+    <em class="info"><%= l(:entra_id_client_id_info) %></em>
 </p>
 <p>
     <label><%= l(:entra_id_client_secret) %></label>
-    <strong><code><%= EntraId.masked_client_secret.presence || "(not set)" %></code></strong>
-    <em class="info">Set via ENTRA_ID_CLIENT_SECRET environment variable</em>
+    <strong><code><%= EntraId.masked_client_secret.presence || l(:entra_id_not_set) %></code></strong>
+    <em class="info"><%= l(:entra_id_client_secret_info) %></em>
 </p>
 <p>
     <label><%= l(:entra_id_tenant_id) %></label>
-    <strong><code><%= EntraId.tenant_id || "(not set)" %></code></strong>
-    <em class="info">Set via ENTRA_ID_TENANT_ID environment variable</em>
+    <strong><code><%= EntraId.tenant_id || l(:entra_id_not_set) %></code></strong>
+    <em class="info"><%= l(:entra_id_tenant_id_info) %></em>
 </p>

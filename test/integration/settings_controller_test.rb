@@ -35,16 +35,19 @@ class SettingsControllerTest < Redmine::IntegrationTest
     get plugin_settings_path("entra_id")
     assert_response :success
     
-    # Check that the env var values are displayed
-    assert_select "strong", text: "test-client-id"
-    assert_select "strong", text: "tes******************"
-    assert_select "strong", text: "test-tenant-id"
+    assert_select "p" do
+      assert_select "code", text: "test-client-id"
+      assert_select "em.info", text: "Set via ENTRA_ID_CLIENT_ID environment variable"
+    end
     
-    # Check that the env var note is displayed
-    assert_select "div.info" do
-      assert_select "code", text: "ENTRA_ID_CLIENT_ID"
-      assert_select "code", text: "ENTRA_ID_CLIENT_SECRET"
-      assert_select "code", text: "ENTRA_ID_TENANT_ID"
+    assert_select "p" do
+      assert_select "code", text: "tes******************"
+      assert_select "em.info", text: "Set via ENTRA_ID_CLIENT_SECRET environment variable"
+    end
+    
+    assert_select "p" do
+      assert_select "code", text: "test-tenant-id"
+      assert_select "em.info", text: "Set via ENTRA_ID_TENANT_ID environment variable"
     end
   end
 end

@@ -7,10 +7,11 @@ en:
   entra_id_exclusive: "Exclusive mode"
   entra_id_exclusive_info: "Disable local authentication and require Entra ID for all users"
   entra_id_client_id: "Client ID"
-  entra_id_client_id_info: "Application (client) ID from Azure app registration"
+  entra_id_client_id_info: "Set via ENTRA_ID_CLIENT_ID environment variable"
   entra_id_client_secret: "Client Secret"
-  entra_id_client_secret_info: "Client secret value from Azure app registration"
+  entra_id_client_secret_info: "Set via ENTRA_ID_CLIENT_SECRET environment variable"
   entra_id_tenant_id: "Tenant ID"
-  entra_id_tenant_id_info: "Directory (tenant) ID of your Azure organization"
+  entra_id_tenant_id_info: "Set via ENTRA_ID_TENANT_ID environment variable"
+  entra_id_not_set: "(not set)"
   field_entra_id_oid: EntraID OID
   field_entra_id_synced_at: EntraID Sync Time
