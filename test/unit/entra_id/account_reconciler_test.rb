@@ -33,6 +33,7 @@ class EntraId::AccountReconcilerTest < ActiveSupport::TestCase
     assert_equal expected_email, new_user.mail
     assert_equal expected_first_name, new_user.firstname
     assert_equal expected_last_name, new_user.lastname
+    assert_nil new_user.auth_source_id
   end
 
   test "reconciler updates existing user when found by oid" do
@@ -60,6 +61,30 @@ class EntraId::AccountReconcilerTest < ActiveSupport::TestCase
     assert_equal updated_first_name, existing_user.firstname
     assert_equal updated_last_name, existing_user.lastname
     assert_not_nil existing_user.synced_at
+  end
+
+  test "reconciler clears auth_source when syncing existing user" do
+    existing_user = User.find_by(login: "jsmith")
+    existing_oid = "existing-jsmith-123"
+    existing_user.update!(oid: existing_oid, auth_source_id: 1, synced_at: 1.hour.ago)
+    
+    # Verify user initially has an auth_source
+    assert_not_nil existing_user.auth_source_id
+    
+    setup_entra_users([
+      {
+        oid: existing_oid,
+        email: "john.smith@example.com",
+        given_name: "John",
+        surname: "Smith"
+      }
+    ])
+    
+    @reconciler.reconcile
+    existing_user.reload
+
+    # Verify auth_source has been cleared
+    assert_nil existing_user.auth_source_id
   end
 
 

@@ -59,7 +59,8 @@ class EntraId::User
         lastname: surname,
         mail: email,
         oid: oid,
-        synced_at: Time.current
+        synced_at: Time.current,
+        auth_source_id: nil
       }
     end
 end

@@ -33,7 +33,8 @@ class EntraId::Identity
       lastname: last_name,
       mail: preferred_username,
       oid: id,
-      synced_at: Time.current
+      synced_at: Time.current,
+      auth_source_id: nil
     }
   end
 

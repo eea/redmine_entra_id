@@ -15,17 +15,14 @@ class EntraId::CallbacksControllerTest < Redmine::IntegrationTest
     user = users(:users_002)
     user.update!(oid: "test-oid-123", firstname: "OldFirstName", lastname: "OldLastName")
 
-    # Start OAuth flow - this populates session with state, nonce, verifier
     get new_entra_id_authorization_path
     assert_redirected_to %r{https://login\.microsoftonline\.com}
 
-    # Extract session values set by authorization controller
     state = session[:entra_id_state]
     code_verifier = session[:entra_id_pkce_verifier]
     nonce = session[:entra_id_nonce]
     authorization_code = "test-code"
 
-    # Stub the full OAuth flow for the callback
     stub_full_oauth_flow(
       code: authorization_code,
       code_verifier: code_verifier,
@@ -38,11 +35,7 @@ class EntraId::CallbacksControllerTest < Redmine::IntegrationTest
       }
     )
 
-    # Simulate the callback from EntraId
-    get entra_id_callback_path, params: {
-      code: authorization_code,
-      state: state
-    }
+    get entra_id_callback_path, params: { code: authorization_code, state: state }
 
     assert_redirected_to my_page_path
 
@@ -73,17 +66,13 @@ class EntraId::CallbacksControllerTest < Redmine::IntegrationTest
   end
 
   test "missing state in session shows invalid OAuth credentials error" do
-    get entra_id_callback_path, params: {
-      code: "test-code",
-      state: "random-state"
-    }
+    get entra_id_callback_path, params: { code: "test-code", state: "random-state" }
 
     assert_redirected_to signin_path
     assert_equal "Invalid OAuth credentials. Authentication failed", flash[:error]
   end
 
   test "state mismatch redirects to signin with invalid OAuth state error" do
-    # Start OAuth flow to set session state
     get new_entra_id_authorization_path
     
     get entra_id_callback_path, params: { 
@@ -96,19 +85,14 @@ class EntraId::CallbacksControllerTest < Redmine::IntegrationTest
   end
 
   test "OAuth2 error during token exchange redirects to signin with invalid token error" do
-    # Start OAuth flow to set session state
     get new_entra_id_authorization_path
     state = session[:entra_id_state]
 
-    # Stub token exchange to return an OAuth2 error
     token_endpoint = "https://login.microsoftonline.com/test-tenant-id/oauth2/v2.0/token"
     stub_request(:post, token_endpoint)
       .to_return(status: 400, body: { error: "invalid_grant" }.to_json)
 
-    get entra_id_callback_path, params: {
-      code: "invalid-code",
-      state: state
-    }
+    get entra_id_callback_path, params: { code: "invalid-code", state: state }
 
     assert_redirected_to signin_path
     assert_equal "Invalid OAuth token. Authentication failed.", flash[:error]
@@ -118,7 +102,6 @@ class EntraId::CallbacksControllerTest < Redmine::IntegrationTest
     user = users(:users_002)
     user.update!(oid: "test-oid-123", status: User::STATUS_LOCKED)
 
-    # Start OAuth flow to set session state
     get new_entra_id_authorization_path
     state = session[:entra_id_state]
     code_verifier = session[:entra_id_pkce_verifier]
@@ -137,10 +120,7 @@ class EntraId::CallbacksControllerTest < Redmine::IntegrationTest
       }
     )
 
-    get entra_id_callback_path, params: {
-      code: authorization_code,
-      state: state
-    }
+    get entra_id_callback_path, params: { code: authorization_code, state: state }
 
     assert_redirected_to signin_path
     assert_equal "Your account is locked.", flash[:error]
@@ -148,7 +128,6 @@ class EntraId::CallbacksControllerTest < Redmine::IntegrationTest
 
   test "new user with self-registration enabled creates and activates user" do
     with_settings self_registration: "3" do
-      # Start OAuth flow to set session state
       get new_entra_id_authorization_path
       state = session[:entra_id_state]
       code_verifier = session[:entra_id_pkce_verifier]
@@ -183,6 +162,7 @@ class EntraId::CallbacksControllerTest < Redmine::IntegrationTest
       assert_equal "NewUser", new_user.firstname
       assert_equal "LastName", new_user.lastname
       assert new_user.active?
+      assert_nil new_user.auth_source_id
     end
   end
 
@@ -201,22 +181,18 @@ class EntraId::CallbacksControllerTest < Redmine::IntegrationTest
     user = users(:users_002)
     user.update!(oid: "test-oid-123")
 
-    # Start OAuth flow - this populates session with state, nonce, verifier
     get new_entra_id_authorization_path
-    assert_redirected_to %r{https://login\.microsoftonline\.com}
 
-    # Verify session data is present
+    assert_redirected_to %r{https://login\.microsoftonline\.com}
     assert_not_nil session[:entra_id_state]
     assert_not_nil session[:entra_id_nonce]
     assert_not_nil session[:entra_id_pkce_verifier]
 
-    # Extract session values for OAuth flow
     state = session[:entra_id_state]
     code_verifier = session[:entra_id_pkce_verifier]
     nonce = session[:entra_id_nonce]
     authorization_code = "test-code"
 
-    # Stub the full OAuth flow for the callback
     stub_full_oauth_flow(
       code: authorization_code,
       code_verifier: code_verifier,
@@ -229,7 +205,6 @@ class EntraId::CallbacksControllerTest < Redmine::IntegrationTest
       }
     )
 
-    # Simulate the callback from EntraId
     get entra_id_callback_path, params: {
       code: authorization_code,
       state: state
@@ -237,22 +212,50 @@ class EntraId::CallbacksControllerTest < Redmine::IntegrationTest
 
     assert_redirected_to my_page_path
 
-    # Verify OAuth session data has been cleared after successful authentication
     assert_nil session[:entra_id_state]
     assert_nil session[:entra_id_nonce]
     assert_nil session[:entra_id_pkce_verifier]
   end
 
+  test "existing user with auth_source gets auth_source cleared on EntraId login" do
+    user = users(:users_002)
+    user.update!(oid: "test-oid-123", auth_source_id: 1)
+    
+    get new_entra_id_authorization_path
+    assert_redirected_to %r{https://login\.microsoftonline\.com}
+
+    state = session[:entra_id_state]
+    code_verifier = session[:entra_id_pkce_verifier]
+    nonce = session[:entra_id_nonce]
+    authorization_code = "test-code"
+
+    stub_full_oauth_flow(
+      code: authorization_code,
+      code_verifier: code_verifier,
+      nonce: nonce,
+      user_data: {
+        id: "test-oid-123",
+        givenName: "TestFirst",
+        surname: "TestLast",
+        mail: user.mail
+      }
+    )
+
+    get entra_id_callback_path, params: { code: authorization_code, state: state }
+
+    assert_redirected_to my_page_path
+
+    user.reload
+    assert_nil user.auth_source_id
+  end
+
   test "failed authentication due to OAuth error clears OAuth session data" do
-    # Start OAuth flow to set session state
     get new_entra_id_authorization_path
     
-    # Verify session data is present
     assert_not_nil session[:entra_id_state]
     assert_not_nil session[:entra_id_nonce]
     assert_not_nil session[:entra_id_pkce_verifier]
 
-    # Simulate OAuth error callback
     get entra_id_callback_path, params: {
       error: "access_denied",
       error_description: "The user denied the request"
@@ -261,30 +264,23 @@ class EntraId::CallbacksControllerTest < Redmine::IntegrationTest
     assert_redirected_to signin_path
     assert_equal "The user denied the request", flash[:error]
 
-    # Verify OAuth session data has been cleared after error
     assert_nil session[:entra_id_state]
     assert_nil session[:entra_id_nonce]
     assert_nil session[:entra_id_pkce_verifier]
   end
 
   test "failed authentication due to state mismatch clears OAuth session data" do
-    # Start OAuth flow to set session state
     get new_entra_id_authorization_path
     
-    # Verify session data is present
     assert_not_nil session[:entra_id_state]
     assert_not_nil session[:entra_id_nonce]
     assert_not_nil session[:entra_id_pkce_verifier]
     
-    get entra_id_callback_path, params: { 
-      code: "test-code", 
-      state: "different-state" 
-    }
+    get entra_id_callback_path, params: {  code: "test-code", state: "different-state" }
 
     assert_redirected_to signin_path
     assert_equal "Invalid OAuth state. Authentication failed", flash[:error]
 
-    # Verify OAuth session data has been cleared after error
     assert_nil session[:entra_id_state]
     assert_nil session[:entra_id_nonce]
     assert_nil session[:entra_id_pkce_verifier]
