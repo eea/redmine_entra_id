@@ -21,7 +21,7 @@ class UsersControllerTest < Redmine::IntegrationTest
     # Should display sync time in information fieldset
     assert_select "fieldset legend", text: "Information"
     assert_select "fieldset", text: /Information/ do
-      assert_select "p", text: /Last EntraID sync.*01\/15\/2025 12:30 PM/
+      assert_select "p", text: /EEA Entra ID synced at.*01\/15\/2025 12:30 PM/
     end
   end
 
@@ -31,7 +31,7 @@ class UsersControllerTest < Redmine::IntegrationTest
     
     # Should not display sync time for non-entra users
     assert_select "fieldset", text: /Information/ do
-      assert_select "p", text: /Last EntraID sync/, count: 0
+      assert_select "p", text: /EEA Entra ID synced at/, count: 0
     end
   end
 end

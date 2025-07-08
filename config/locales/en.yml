@@ -15,3 +15,4 @@ en:
   entra_id_not_set: "(not set)"
   field_entra_id_oid: EntraID OID
   field_entra_id_synced_at: EntraID Sync Time
+  label_last_entra_id_sync: "EEA Entra ID synced at"
