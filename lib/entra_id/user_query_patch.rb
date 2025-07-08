@@ -12,7 +12,7 @@ module EntraId::UserQueryPatch
         initialize_available_filters_without_oid
 
         add_available_filter "oid", type: :string, label: :field_entra_id_oid
-        add_available_filter "synced_at", type: :string, label: :field_entra_id_synced_at
+        add_available_filter "synced_at", type: :date, label: :field_entra_id_synced_at
       end
     end
   end
