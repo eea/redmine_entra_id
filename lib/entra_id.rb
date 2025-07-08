@@ -82,3 +82,5 @@ module EntraId
 
   end
 end
+
+require_relative 'entra_id/hooks'
