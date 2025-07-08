@@ -9,7 +9,7 @@ class AccountControllerTest < Redmine::IntegrationTest
       
       assert_response :success
       assert_select "#entra-id-form", count: 0
-      assert_select "a", text: "Login with EntraID", count: 0
+      assert_select "button", text: "Log in with EEA Microsoft Entra ID", count: 0
       assert_select "#login-form", count: 1
       assert_select "input#username", count: 1
       assert_select "input#password", count: 1
@@ -22,7 +22,7 @@ class AccountControllerTest < Redmine::IntegrationTest
 
       assert_response :success
       assert_select "#entra-id-form", count: 1
-      assert_select "a", text: "Login with EntraID", count: 1
+      assert_select "button", text: "Log in with EEA Microsoft Entra ID", count: 1
       assert_select "#login-form", count: 1
       assert_select "input#username", count: 1
       assert_select "input#password", count: 1
@@ -35,7 +35,7 @@ class AccountControllerTest < Redmine::IntegrationTest
 
       assert_response :success
       assert_select "#entra-id-form", count: 1
-      assert_select "a", text: "Login with EntraID", count: 1
+      assert_select "button", text: "Log in with EEA Microsoft Entra ID", count: 1
       assert_select "#login-form", count: 0
       assert_select "input#username", count: 0
       assert_select "input#password", count: 0

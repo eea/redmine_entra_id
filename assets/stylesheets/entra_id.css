@@ -3,29 +3,41 @@ div#entra-id-form {
     margin: 0 auto;
     padding: 20px;
     box-sizing: border-box;
-    border: 1px solid #dadce7;
-    border-radius: 3px;
-    background-color: #f9fafb;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.07), 0 3px 8px rgba(0, 0, 0, 0.04);
 
-    a {
-        display: block;
+    .ms-signin-button {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 12px;
         width: 100%;
-        border: 1px solid;
-        border-radius: 3px;
-        border-color: #0065ff #0065ff #004dc2;
-        background-color: #0065ff;
-        box-shadow: 0 1px 0 #003585;
-        color: #fff;
-        line-height: 29px;
-        text-align: center;
-        transition: border-color 50ms ease-in-out,background-color 50ms ease-in-out,box-shadow 50ms ease-in-out;
-
+        padding: 11px 12px;
+        background-color: #ffffff;
+        border: 1px solid #8c8c8c;
+        border-radius: 4px;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        font-size: 15px;
+        font-weight: 600;
+        color: #5e5e5e;
+        cursor: pointer;
+        transition: background-color 0.1s ease, border-color 0.1s ease;
 
         &:hover {
-            text-decoration: none;
-            color: #fff;
-            background-color: #004dc2;
+            background-color: #f5f5f5;
+            border-color: #6e6e6e;
+        }
+
+        &:active {
+            background-color: #eaeaea;
+            border-color: #6e6e6e;
+        }
+
+        svg {
+            flex-shrink: 0;
+        }
+
+        span {
+            text-align: left;
+            line-height: 1;
         }
     }
 }
