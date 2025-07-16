@@ -125,4 +125,171 @@ class EntraId::AuthorizationTest < ActiveSupport::TestCase
 
     assert_nil identity
   end
+
+  test "JWKS caching respects HTTP Cache-Control max-age header" do
+    # Use memory store for this test since test environment uses null_store
+    original_cache_store = Rails.cache
+    Rails.cache = ActiveSupport::Cache::MemoryStore.new
+    
+    # Clear cache before test
+    Rails.cache.clear
+    
+    # Stub JWKS endpoint with Cache-Control header (max-age=300 = 5 minutes)
+    jwks_endpoint = "https://login.microsoftonline.com/test-tenant-id/discovery/v2.0/keys"
+    
+    # Create a real RSA key for testing
+    rsa_key = test_rsa_key
+    n = Base64.urlsafe_encode64(rsa_key.n.to_s(2), padding: false)
+    e = Base64.urlsafe_encode64(rsa_key.e.to_s(2), padding: false)
+    
+    jwks_response = {
+      keys: [ {
+        kty: "RSA",
+        use: "sig",
+        kid: "test-key-id",
+        n: n,
+        e: e
+      } ]
+    }
+
+    first_stub = stub_request(:get, jwks_endpoint)
+      .to_return(
+        status: 200,
+        body: jwks_response.to_json,
+        headers: { 
+          "Content-Type" => "application/json",
+          "Cache-Control" => "max-age=300"
+        }
+      )
+    
+    # First request should fetch JWKS
+    authorization1 = EntraId::Authorization.new(redirect_uri: @redirect_uri)
+    id_token1 = create_valid_jwt_token(authorization1.nonce)
+    stub_token_exchange("auth-code", id_token1, authorization1.code_verifier, redirect_uri: @redirect_uri)
+    
+    authorization1.exchange_code_for_identity(code: "auth-code")
+    assert_requested first_stub, times: 1
+    
+    # Second request 4 minutes later - should still use cache
+    authorization2 = EntraId::Authorization.new(redirect_uri: @redirect_uri)
+    id_token2 = create_valid_jwt_token(authorization2.nonce)
+    stub_token_exchange("auth-code", id_token2, authorization2.code_verifier, redirect_uri: @redirect_uri)
+    
+    travel_to 4.minutes.from_now do
+      authorization2.exchange_code_for_identity(code: "auth-code")
+      assert_requested first_stub, times: 1 # Should still be 1, not 2
+    end
+    
+    # Third request 6 minutes from start - cache should expire
+    authorization3 = EntraId::Authorization.new(redirect_uri: @redirect_uri)
+    id_token3 = create_valid_jwt_token(authorization3.nonce)
+    stub_token_exchange("auth-code", id_token3, authorization3.code_verifier, redirect_uri: @redirect_uri)
+    
+    travel_to 6.minutes.from_now do
+      authorization3.exchange_code_for_identity(code: "auth-code")
+      assert_requested first_stub, times: 2 # Should now be 2
+    end
+  ensure
+    # Restore original cache store
+    Rails.cache = original_cache_store
+  end
+
+  test "JWKS loader refreshes cache when kid not found" do
+    # Use memory store for this test since test environment uses null_store
+    original_cache_store = Rails.cache
+    Rails.cache = ActiveSupport::Cache::MemoryStore.new
+    
+    # Clear cache before test
+    Rails.cache.clear
+    
+    jwks_endpoint = "https://login.microsoftonline.com/test-tenant-id/discovery/v2.0/keys"
+    
+    # Create RSA keys for testing
+    rsa_key1 = test_rsa_key
+    n1 = Base64.urlsafe_encode64(rsa_key1.n.to_s(2), padding: false)
+    e1 = Base64.urlsafe_encode64(rsa_key1.e.to_s(2), padding: false)
+    
+    # Initial JWKS response with kid "test-key-id"
+    initial_jwks = {
+      keys: [ {
+        kty: "RSA",
+        use: "sig",
+        kid: "test-key-id",
+        n: n1,
+        e: e1
+      } ]
+    }
+    
+    # Updated JWKS response with new kid "new-key-id"
+    updated_jwks = {
+      keys: [ 
+        {
+          kty: "RSA",
+          use: "sig",
+          kid: "test-key-id",
+          n: n1,
+          e: e1
+        },
+        {
+          kty: "RSA",
+          use: "sig",
+          kid: "new-key-id",
+          n: n1,
+          e: e1
+        }
+      ]
+    }
+    
+    # First stub returns initial JWKS
+    initial_stub = stub_request(:get, jwks_endpoint)
+      .to_return(
+        status: 200,
+        body: initial_jwks.to_json,
+        headers: { 
+          "Content-Type" => "application/json",
+          "Cache-Control" => "max-age=3600" # 1 hour
+        }
+      ).times(1).then.to_return(
+        status: 200,
+        body: updated_jwks.to_json,
+        headers: { 
+          "Content-Type" => "application/json",
+          "Cache-Control" => "max-age=3600"
+        }
+      )
+    
+    # First request with initial kid - should fetch JWKS
+    authorization1 = EntraId::Authorization.new(redirect_uri: @redirect_uri)
+    id_token1 = create_valid_jwt_token(authorization1.nonce)
+    stub_token_exchange("auth-code", id_token1, authorization1.code_verifier, redirect_uri: @redirect_uri)
+    
+    authorization1.exchange_code_for_identity(code: "auth-code")
+    assert_requested initial_stub, times: 1
+    
+    # Second request with new kid - should trigger JWKS refresh due to kid_not_found
+    authorization2 = EntraId::Authorization.new(redirect_uri: @redirect_uri)
+    # Create token with new kid that doesn't exist in cached JWKS
+    id_token2 = JWT.encode(
+      {
+        "iss" => "https://login.microsoftonline.com/test-tenant-id/v2.0",
+        "aud" => "test-client-id",
+        "exp" => Time.now.to_i + 3600,
+        "iat" => Time.now.to_i,
+        "oid" => "user-id",
+        "preferred_username" => "test@example.com",
+        "nonce" => authorization2.nonce
+      },
+      test_rsa_key,
+      "RS256",
+      { kid: "new-key-id" }
+    )
+    stub_token_exchange("auth-code", id_token2, authorization2.code_verifier, redirect_uri: @redirect_uri)
+    
+    authorization2.exchange_code_for_identity(code: "auth-code")
+    # Should have fetched JWKS twice - once initially, once for kid_not_found
+    assert_requested initial_stub, times: 2
+  ensure
+    # Restore original cache store
+    Rails.cache = original_cache_store
+  end
 end

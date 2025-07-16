@@ -27,10 +27,4 @@ namespace :entra_id do
     Rake::Task['entra_id:sync:users'].invoke
     Rake::Task['entra_id:sync:groups'].invoke
   end
-  
-  # Keep the old task for backward compatibility
-  desc "Sync all users from Microsoft EntraID (deprecated, use entra_id:sync:users)"
-  task sync_users: :environment do
-    Rake::Task['entra_id:sync:users'].invoke
-  end
 end

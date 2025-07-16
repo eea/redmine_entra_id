@@ -12,3 +12,6 @@ WebMock.disable_net_connect!(allow_localhost: true)
 
 # Include the environment helper in all tests
 ActiveSupport::TestCase.include(EntraIdEnvHelper)
+
+# Configure fixture path for plugin tests
+ActiveSupport::TestCase.file_fixture_path = Rails.root.join("plugins/entra_id/test/fixtures")

@@ -1,5 +1,4 @@
 class EntraId::Authorization
-
   attr_reader :code_verifier, :state, :nonce, :redirect_uri
 
   def initialize(redirect_uri:, code_verifier: nil, state: nil, nonce: nil)
@@ -68,8 +67,8 @@ class EntraId::Authorization
       data, _header = JWT.decode(
         id_token, nil, true,
         {
-          algorithms: ["RS256"],
-          jwks: jwks,
+          algorithms: [ "RS256" ],
+          jwks: KeySetLoader.new,
           verify_aud: true,
           aud: EntraId.client_id,
           verify_iss: true,
@@ -79,27 +78,5 @@ class EntraId::Authorization
       )
 
       data
-    end
-
-    def jwks
-      Rails.cache.fetch("entra_id_jwks", expires_in: 1.hour) do
-        fetch_jwks_from_microsoft
-      end
-    end
-
-    def fetch_jwks_from_microsoft
-      uri = URI(EntraId.jwks_url)
-      client = EntraId::HttpClient.new(uri)
-      response = client.get(uri.request_uri)
-
-      if response.is_a?(Net::HTTPSuccess)
-        JSON.parse(response.body)
-      else
-        Rails.logger.error "Failed to fetch JWKS: #{response.code} #{response.body}"
-        nil
-      end
-    rescue JSON::ParserError => e
-      Rails.logger.error "Failed to parse JWKS response: #{e.message}"
-      nil
     end
 end
