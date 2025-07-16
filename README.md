@@ -13,18 +13,17 @@ Microsoft EntraID is Microsoft's cloud-based identity and access management serv
 
 ## Plugin features
 
-- **OAuth 2.0 Authentication**: Secure login using Microsoft EntraID credentials
-- **User Synchronization**: Automatically sync users from Microsoft Graph API
+- **OAuth 2.0 Authentication**: Secure login using Microsoft EntraID credentials with
+  automatic user creation
+- **User Synchronization**: One-way sync of EntraId users to Redmine
+- **Group Synchronization**: One-way sync of EntraID groups and memberships to Redmine
 - **Exclusive Mode**: Option to disable local Redmine authentication entirely
-- **User Mapping**: Maps EntraID user attributes to Redmine user fields
-- **Automatic User Creation**: Creates Redmine users on first login if they don't exist
 
 ## Requirements
 
-- Redmine 4.0+ (tested with Redmine 5.x)
-- Ruby 2.7+
+- Redmine 5.x and 6.0
+- Ruby 3.1 or newer
 - Microsoft EntraID tenant with application registration
-- Network access to Microsoft Graph API endpoints
 
 ## Installation
 
@@ -50,34 +49,23 @@ Microsoft EntraID is Microsoft's cloud-based identity and access management serv
 
 These steps need to be completed in the EntraID admin console.
 
-### 1. Register an Application
-
-1. Sign in to the [Azure portal](https://portal.azure.com)
-2. Navigate to **Azure Active Directory** > **App registrations**
+1. Sign in to the [Microsoft Entra admin center](https://entra.microsoft.com)
+2. Navigate to **Entra ID** > **App registrations**
 3. Click **New registration**
 4. Configure:
    - **Name**: Redmine
    - **Supported account types**: Accounts in this organizational directory only
    - **Redirect URI**: `https://your-redmine-domain.com/entra_id/callback`
-
-### 2. Configure Application Permissions
-
-In your app registration:
-
-1. Go to **API permissions**
-2. Add the following **Microsoft Graph** permissions:
+5. Go to **API permissions**
+6. Add the following **Microsoft Graph** permissions:
    - **User.Read** (Delegated) - for user authentication
    - **User.Read.All** (Application) - for user synchronization
-3. Click **Grant admin consent** to apply the permissions
-
-### 3. Generate Client Secret
-
-1. Go to **Certificates & secrets**
-2. Click **New client secret**
-3. Add a description and set expiration
-4. **Copy the secret value** (you won't be able to see it again)
-
-### 4. Note Your Configuration Values
+   - **Group.Read.All** (Application) - for group synchronization
+7. Click **Grant admin consent** to apply the permissions
+8. Go to **Certificates & secrets**
+9. Click **New client secret**
+10. Add a description and set expiration
+11. **Copy the secret value** (you won't be able to see it again)
 
 From your app registration overview page, copy:
 - **Application (client) ID**
@@ -90,15 +78,23 @@ From your app registration overview page, copy:
    - Go to **Administration** > **Plugins**
    - Find "Entra ID" and click **Configure**
 
-2. **Configure the following settings:**
+2. **Configure the plugin:**
 
-   | Setting | Description | Example |
+   The plugin uses environment variables for the Entra credentials:
+
+   ```bash
+   # Set the following environment variables
+   export ENTRA_ID_CLIENT_ID="12345678-1234-1234-1234-123456789012"
+   export ENTRA_ID_CLIENT_SECRET="your-client-secret-here"
+   export ENTRA_ID_TENANT_ID="87654321-4321-4321-4321-210987654321"
+   ```
+
+   **Plugin Settings** (via Administration > Plugins > Configure):
+
+   | Setting | Description | Default |
    |---------|-------------|---------|
-   | **Enabled** | Enable/disable the plugin | `true` |
+   | **Enabled** | Enable/disable the plugin | `false` |
    | **Exclusive** | Disable local Redmine authentication | `false` |
-   | **Client ID** | Application ID from Azure | `12345678-1234-1234-1234-123456789012` |
-   | **Client Secret** | Secret value from Azure | `your-client-secret-here` |
-   | **Tenant ID** | Directory ID from Azure | `87654321-4321-4321-4321-210987654321` |
 
 3. **Save the configuration**
 
@@ -108,23 +104,29 @@ From your app registration overview page, copy:
 
 Once configured, users will see a "Sign in with EntraId" option on the Redmine login page. The authentication flow:
 
-1. User clicks "Sign in with EntraId"
+1. User clicks "Log in with Microsoft EntraId"
 2. Redirected to Microsoft login page
 3. User enters corporate credentials
 4. Microsoft redirects back to Redmine with authorization code
 5. Plugin exchanges code for user information
 6. User is logged into Redmine (account created if needed)
 
-### User Synchronization
+### User and Group Synchronization
 
-The plugin can synchronize users from your Entra ID directory:
+The plugin provides rake tasks for synchronizing users and groups:
 
 ```bash
-# From Redmine root directory
-bundle exec rake entra_id:sync_users RAILS_ENV=production
+# Sync both users and groups
+bundle exec rake entra_id:sync RAILS_ENV=production
+
+# Sync only users
+bundle exec rake entra_id:sync:users RAILS_ENV=production
+
+# Sync only groups
+bundle exec rake entra_id:sync:groups RAILS_ENV=production
 ```
 
-This task:
+**User Synchronization**:
 - Fetches all users from Microsoft Graph API
 - Creates/updates local Redmine users
 - Maps Entra ID attributes to Redmine fields:
@@ -132,6 +134,13 @@ This task:
   - `givenName` → firstname
   - `surname` → lastname
   - `id` (OID) → stored for future synchronization
+- Updates `synced_at` timestamp
+
+**Group Synchronization**:
+- Fetches groups from Microsoft Graph API
+- Creates/updates Redmine groups based on EntraID groups
+- Syncs group memberships automatically
+- Removes Redmine groups that no longer exist in EntraID
 
 ### Exclusive Mode
 
@@ -164,16 +173,6 @@ The plugin adds the following fields to the `users` table:
 - Double-check Client ID and Tenant ID values
 - Ensure Client Secret hasn't expired
 
-
-## Development
-
-### Running Tests
-
-```bash
-# From Redmine root directory
-bundle exec rake test:plugins NAME=entra_id RAILS_ENV=test
-```
-
 ### Contributing
 
 1. Fork the repository
@@ -183,21 +182,9 @@ bundle exec rake test:plugins NAME=entra_id RAILS_ENV=test
 
 ## Security Considerations
 
-- **Client Secret Protection**: The client secret is stored encrypted in the database
+- **Client Secret Protection**: Client secrets are stored in environment variables, not in the database
 - **HTTPS Required**: OAuth flows require HTTPS in production
-- **Token Validation**: All tokens are validated against Microsoft's public keys
-- **State Parameter**: CSRF protection using OAuth state parameter
-
-## License
-
-This plugin is released under the [MIT License](LICENSE).
-
-## Support
-
-For issues and questions:
-- GitHub Issues: https://github.com/eea/redmine_entra_id/issues
-- Documentation: https://github.com/eea/redmine_entra_id
-
-## Version History
-
-- **0.0.1**: Initial release with basic OAuth authentication and user sync
+- **Token Validation**: All tokens are validated against Microsoft's public keys with smart JWKS caching
+- **PKCE Flow**: Uses Proof Key for Code Exchange for enhanced OAuth security
+- **State Parameter**: CSRF protection using OAuth state parameter and nonce validation
+- **Managed Fields**: User attributes synced from EntraID cannot be edited locally
