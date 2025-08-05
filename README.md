@@ -28,17 +28,20 @@ Microsoft EntraID is Microsoft's cloud-based identity and access management serv
 ## Installation
 
 1. **Clone the plugin into your Redmine plugins directory:**
+
    ```bash
    cd /path/to/redmine
    git clone https://github.com/eea/redmine_entra_id.git plugins/entra_id
    ```
 
 2. **Install plugin dependencies:**
+
    ```bash
    bundle install
    ```
 
 3. **Run the plugin migrations from the Redmine root directory:**
+
    ```bash
    bundle exec rake redmine:plugins:migrate RAILS_ENV=production
    ```
@@ -68,6 +71,7 @@ These steps need to be completed in the EntraID admin console.
 11. **Copy the secret value** (you won't be able to see it again)
 
 From your app registration overview page, copy:
+
 - **Application (client) ID**
 - **Directory (tenant) ID**
 - **Client secret** (from previous step)
@@ -75,6 +79,7 @@ From your app registration overview page, copy:
 ## Plugin Configuration
 
 1. **Navigate to Redmine Administration**
+
    - Go to **Administration** > **Plugins**
    - Find "Entra ID" and click **Configure**
 
@@ -91,9 +96,9 @@ From your app registration overview page, copy:
 
    **Plugin Settings** (via Administration > Plugins > Configure):
 
-   | Setting | Description | Default |
-   |---------|-------------|---------|
-   | **Enabled** | Enable/disable the plugin | `false` |
+   | Setting       | Description                          | Default |
+   | ------------- | ------------------------------------ | ------- |
+   | **Enabled**   | Enable/disable the plugin            | `false` |
    | **Exclusive** | Disable local Redmine authentication | `false` |
 
 3. **Save the configuration**
@@ -127,6 +132,7 @@ bundle exec rake entra_id:sync:groups RAILS_ENV=production
 ```
 
 **User Synchronization**:
+
 - Fetches all users from Microsoft Graph API
 - Creates/updates local Redmine users
 - Maps Entra ID attributes to Redmine fields:
@@ -137,6 +143,7 @@ bundle exec rake entra_id:sync:groups RAILS_ENV=production
 - Updates `synced_at` timestamp
 
 **Group Synchronization**:
+
 - Fetches groups from Microsoft Graph API
 - Creates/updates Redmine groups based on EntraID groups
 - Syncs group memberships automatically
@@ -145,6 +152,7 @@ bundle exec rake entra_id:sync:groups RAILS_ENV=production
 ### Exclusive Mode
 
 When **Exclusive** mode is enabled:
+
 - Local Redmine authentication is disabled
 - Only Entra ID users can log in
 - Registration and password reset forms are hidden
@@ -162,29 +170,78 @@ The plugin adds the following fields to the `users` table:
 ### Common Issues
 
 **"Invalid redirect URI" error:**
+
 - Ensure the redirect URI in Azure matches exactly: `https://your-domain.com/entra_id/callback`
 - Check for trailing slashes and protocol (http vs https)
 
 **"Insufficient privileges" error:**
+
 - Verify application permissions are configured correctly
 - Ensure admin consent has been granted for your organization
 
 **"Invalid client" error:**
+
 - Double-check Client ID and Tenant ID values
 - Ensure Client Secret hasn't expired
 
-### Contributing
+## Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes with tests
-4. Submit a pull request
+### Local setup
 
-## Security Considerations
+Clone the Redmine repository:
 
-- **Client Secret Protection**: Client secrets are stored in environment variables, not in the database
-- **HTTPS Required**: OAuth flows require HTTPS in production
-- **Token Validation**: All tokens are validated against Microsoft's public keys with smart JWKS caching
-- **PKCE Flow**: Uses Proof Key for Code Exchange for enhanced OAuth security
-- **State Parameter**: CSRF protection using OAuth state parameter and nonce validation
-- **Managed Fields**: User attributes synced from EntraID cannot be edited locally
+```bash
+gh repo clone redmine/redmine
+```
+
+Clone the plugin in the Redmine plugins folder in the `plugins/entra_id` folder of the Redmine installation:
+
+```bash
+gh repo clone eea/redmine_entra_id redmine/plugins/entra_id
+```
+
+Create a database configuration for Redmine. Below is a sample configuration for MySQL 8 or newer:
+
+```yaml
+default: &default
+  adapter: mysql2
+  host: 127.0.0.1
+  username: root
+  encoding: utf8mb4
+  variables:
+    # Recommended `transaction_isolation` for MySQL to avoid concurrency issues is
+    # `READ-COMMITTED`.
+    # In case of MySQL lower than 8, the variable name is `tx_isolation`.
+    # See https://www.redmine.org/projects/redmine/wiki/MySQL_configuration
+    transaction_isolation: "READ-COMMITTED"
+
+development:
+  <<: *default
+  database: redmine_development
+
+test:
+  <<: *default
+  database: redmine_test
+
+production:
+  <<: *default
+  database: redmine_production
+```
+
+Setup the database:
+
+```bash
+bin/rails db:prepare
+```
+
+Load the default Redmine data:
+
+```bash
+bin/rails redmine:load_default_data REDMINE_LANG=en
+```
+
+Run the plugin migrations:
+
+```bash
+bin/rails redmine:plugins:migrate NAME=entra_id
+```
