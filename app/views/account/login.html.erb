@@ -1,0 +1,10 @@
+<%= call_hook :view_account_login_top %>
+
+<% if EntraId.enabled? %>
+    <%= render "login_form" unless EntraId.exclusive? %>
+    <%= render "entra_id_button" %>
+<% else %>
+    <%= render "login_form" %>
+<% end %>
+
+<%= call_hook :view_account_login_bottom %>

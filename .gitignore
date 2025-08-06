@@ -1,0 +1,6 @@
+# IDE files
+/.idea/
+/.vscode
+/.env
+/.ruby-version
+Gemfile.lock

@@ -1,0 +1,6 @@
+<% if form.object.authenticated_via_entra? && form.object.synced_at.present? %>
+  <p>
+    <label><%=l(:label_last_entra_id_sync)%></label>
+    <%= format_time(form.object.synced_at) %>
+  </p>
+<% end %>

@@ -1,0 +1,43 @@
+div#entra-id-form {
+    width: 340px;
+    margin: 0 auto;
+    padding: 20px;
+    box-sizing: border-box;
+
+    .ms-signin-button {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 12px;
+        width: 100%;
+        padding: 11px 12px;
+        background-color: #ffffff;
+        border: 1px solid #8c8c8c;
+        border-radius: 4px;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+        font-size: 15px;
+        font-weight: 600;
+        color: #5e5e5e;
+        cursor: pointer;
+        transition: background-color 0.1s ease, border-color 0.1s ease;
+
+        &:hover {
+            background-color: #f5f5f5;
+            border-color: #6e6e6e;
+        }
+
+        &:active {
+            background-color: #eaeaea;
+            border-color: #6e6e6e;
+        }
+
+        svg {
+            flex-shrink: 0;
+        }
+
+        span {
+            text-align: left;
+            line-height: 1;
+        }
+    }
+}

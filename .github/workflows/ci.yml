@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [ develop ]
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    env:
+      RAILS_ENV: test
+      RAILS_MASTER_KEY: 016f84ab95d5597642ad25a66779400e
+    
+    strategy:
+      matrix:
+        include:
+          # Rails 6.1 (Redmine 5.1) - supports Ruby >= 2.5.0, recommended 3.0.x
+          - ruby: '2.7'
+            redmine: '5.1-stable'
+          - ruby: '3.0'
+            redmine: '5.1-stable'
+          - ruby: '3.1'
+            redmine: '5.1-stable'
+          # Rails 7.2 (Redmine 6.0) - supports Ruby >= 3.1.0, recommended 3.3
+          - ruby: '3.1'
+            redmine: '6.0-stable'
+          - ruby: '3.2'
+            redmine: '6.0-stable'
+          - ruby: '3.3'
+            redmine: '6.0-stable'
+    
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: redmine_test
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+        ports:
+          - 3306:3306
+
+    steps:
+    - name: Setup Redmine
+      run: |
+        git clone https://github.com/redmine/redmine.git .
+        git checkout ${{ matrix.redmine }}
+        cp config/database.yml.example config/database.yml
+        sed -i 's/password: ""/password: root/' config/database.yml
+        sed -i 's/host: localhost/host: 127.0.0.1/' config/database.yml
+    
+    - name: Checkout plugin
+      uses: actions/checkout@v4
+      with:
+        path: plugins/entra_id
+    
+    - name: Set up Ruby
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: ${{ matrix.ruby }}
+        bundler-cache: true
+    
+    - name: Setup database
+      run: |
+        bin/rails db:prepare redmine:load_default_data REDMINE_LANG=en
+        bin/rails redmine:plugins:migrate NAME=entra_id
+    
+    - name: Run tests
+      run: bin/rails redmine:plugins:test NAME=entra_id
