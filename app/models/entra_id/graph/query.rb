@@ -34,10 +34,11 @@ class EntraId::Graph::Query
   end
 
   def group_transitive_members(group_id)
-    data = fetch_page(EntraId::Graph::Query.group_members_url(group_id))
+    url = EntraId::Graph::Query.group_members_url(group_id)
+    all_members = get_all_pages(url)
 
     # Filter to only include users (not groups)
-    (data["value"] || []).select { |m| m["@odata.type"] == "#microsoft.graph.user" }
+    all_members.select { |m| m["@odata.type"] == "#microsoft.graph.user" }
   end
 
   private
