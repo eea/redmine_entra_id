@@ -7,7 +7,7 @@ module EntraIdDirectoryHelper
 
   def stub_entra_id_token(access_token: "mock_access_token")
     token_url = "https://login.microsoftonline.com/#{EntraId.tenant_id}/oauth2/v2.0/token"
-    
+
     stub_request(:post, token_url)
       .with(
         body: {
@@ -29,19 +29,21 @@ module EntraIdDirectoryHelper
   end
 
   def setup_entra_users(users = [])
-    users_url = "https://graph.microsoft.com/v1.0/users"
-    
+    # Match the users endpoint with any query parameters
+    users_url_pattern = /https:\/\/graph\.microsoft\.com\/v1\.0\/users\?/
+
     user_data = users.map do |user|
       {
         "id" => user[:oid] || user[:id],
         "mail" => user[:email] || user[:mail],
         "userPrincipalName" => user[:email] || user[:mail] || user[:userPrincipalName],
         "givenName" => user[:given_name] || user[:givenName],
-        "surname" => user[:surname]
+        "surname" => user[:surname],
+        "displayName" => user[:display_name] || "#{user[:given_name]} #{user[:surname]}"
       }
     end
-    
-    stub_request(:get, users_url).to_return(
+
+    stub_request(:get, users_url_pattern).to_return(
       status: 200,
       body: { value: user_data }.to_json,
       headers: { "Content-Type" => "application/json" }

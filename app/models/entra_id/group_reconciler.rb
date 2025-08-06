@@ -4,7 +4,19 @@ module EntraId
       group = find_or_create_group(entra_group)
 
       # Update group name with ID emoji prefix
-      group.lastname = "🆔 #{entra_group.display_name}"
+      new_name = "🆔 #{entra_group.display_name}"
+
+      # Only update the name if it has changed to avoid uniqueness conflicts
+      if group.lastname != new_name
+        # Check if another group already has this name
+        existing_group = ::Group.where.not(id: group.id).where(lastname: new_name).first
+        if existing_group
+          # If another group has this name, append the OID to make it unique
+          new_name = "🆔 #{entra_group.display_name} (#{entra_group.id[0..7]})"
+        end
+        group.lastname = new_name
+      end
+
       group.synced_at = Time.current
       group.save!
 

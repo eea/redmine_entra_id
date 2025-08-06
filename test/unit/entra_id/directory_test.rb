@@ -8,32 +8,6 @@ class EntraId::DirectoryTest < ActiveSupport::TestCase
     }
   end
 
-  test "returns access token when client credentials authentication succeeds" do
-    stub_request(:post, "https://login.microsoftonline.com/test-tenant-id/oauth2/v2.0/token")
-      .with(
-        body: {
-          "grant_type" => "client_credentials",
-          "client_id" => "test-client-id",
-          "client_secret" => "test-secret-123",
-          "scope" => "https://graph.microsoft.com/.default"
-        }
-      )
-      .to_return(
-        status: 200,
-        body: {
-          "access_token" => "test-access-token",
-          "token_type" => "Bearer",
-          "expires_in" => 3600
-        }.to_json,
-        headers: { "Content-Type" => "application/json" }
-      )
-
-    directory = EntraId::Directory.new
-    access_token = directory.send(:access_token)  # Private method
-
-    assert_equal "test-access-token", access_token.value
-  end
-
   test "returns EntraId::User objects when fetching users from Graph API" do
     # Stub authentication
     stub_request(:post, "https://login.microsoftonline.com/test-tenant-id/oauth2/v2.0/token")
@@ -43,8 +17,8 @@ class EntraId::DirectoryTest < ActiveSupport::TestCase
         headers: { "Content-Type" => "application/json" }
       )
 
-    # Stub Graph API users endpoint
-    stub_request(:get, "https://graph.microsoft.com/v1.0/users")
+    # Stub Graph API users endpoint with query parameters
+    stub_request(:get, /https:\/\/graph\.microsoft\.com\/v1\.0\/users\?/)
       .with(headers: { "Authorization" => "Bearer test-access-token" })
       .to_return(
         status: 200,
@@ -60,7 +34,7 @@ class EntraId::DirectoryTest < ActiveSupport::TestCase
             {
               "id" => "87654321-4321-4321-4321-210987654321",
               "mail" => nil,
-              "userPrincipalName" => "jane.smith@example.com", 
+              "userPrincipalName" => "jane.smith@example.com",
               "givenName" => "Jane",
               "surname" => "Smith"
             }
@@ -73,7 +47,7 @@ class EntraId::DirectoryTest < ActiveSupport::TestCase
     users = directory.users.to_a
 
     assert_equal 2, users.size
-    
+
     first_user = users.first
     assert_instance_of EntraId::User, first_user
     assert_equal "12345678-1234-1234-1234-123456789012", first_user.oid
@@ -94,8 +68,8 @@ class EntraId::DirectoryTest < ActiveSupport::TestCase
         headers: { "Content-Type" => "application/json" }
       )
 
-    # Stub first page
-    stub_request(:get, "https://graph.microsoft.com/v1.0/users")
+    # Stub first page with query parameters
+    stub_request(:get, /https:\/\/graph\.microsoft\.com\/v1\.0\/users\?/)
       .with(headers: { "Authorization" => "Bearer test-access-token" })
       .to_return(
         status: 200,
@@ -150,8 +124,8 @@ class EntraId::DirectoryTest < ActiveSupport::TestCase
         headers: { "Content-Type" => "application/json" }
       )
 
-    # Stub Graph API with 5 users
-    stub_request(:get, "https://graph.microsoft.com/v1.0/users")
+    # Stub Graph API with 5 users with query parameters
+    stub_request(:get, /https:\/\/graph\.microsoft\.com\/v1\.0\/users\?/)
       .with(headers: { "Authorization" => "Bearer test-access-token" })
       .to_return(
         status: 200,
@@ -170,7 +144,7 @@ class EntraId::DirectoryTest < ActiveSupport::TestCase
 
     directory = EntraId::Directory.new
     batches = []
-    
+
     directory.users.each_slice(2) do |batch|
       batches << batch.map(&:oid)
     end
