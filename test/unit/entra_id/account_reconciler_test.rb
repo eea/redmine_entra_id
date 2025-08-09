@@ -68,9 +68,6 @@ class EntraId::AccountReconcilerTest < ActiveSupport::TestCase
     existing_oid = "existing-jsmith-123"
     existing_user.update!(oid: existing_oid, auth_source_id: 1, synced_at: 1.hour.ago)
     
-    # Verify user initially has an auth_source
-    assert_not_nil existing_user.auth_source_id
-    
     setup_entra_users([
       {
         oid: existing_oid,
@@ -83,11 +80,6 @@ class EntraId::AccountReconcilerTest < ActiveSupport::TestCase
     @reconciler.reconcile
     existing_user.reload
 
-    # Verify auth_source has been cleared
     assert_nil existing_user.auth_source_id
   end
-
-
-
-
 end

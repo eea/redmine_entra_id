@@ -235,5 +235,4 @@ class EntraId::UserTest < ActiveSupport::TestCase
     assert_equal "Unknown", entra_user.given_name
     assert_equal "User", entra_user.surname
   end
-
 end
