@@ -20,9 +20,26 @@ class EntraId::Graph::Client
       end
   end
 
+  def initialize
+    @http = nil
+  end
+
+  # Block-based API for connection reuse
+  def perform(&block)
+    @http = Net::HTTP.start(GRAPH_HOST, URI::HTTPS.default_port, use_ssl: true)
+    @http.read_timeout = 120  # Increase for long-running operations
+    @http.keep_alive_timeout = 30
+
+    yield self
+  ensure
+    @http.finish if @http && @http.started?
+    @http = nil
+  end
+
   def get(path, params = {})
-    Net::HTTP.start(GRAPH_HOST, URI::HTTPS.default_port, use_ssl: true) do |http|
-      request = build_request_for(EntraId::Graph::Client.build_uri("/#{path}", params))
+    with_http do |http|
+      uri = self.class.build_uri("/#{path}", params)
+      request = build_request_for(uri)
 
       data = JSON.parse(http.request(request).body)
       collection = data["value"]
@@ -40,6 +57,18 @@ class EntraId::Graph::Client
   end
 
   private
+
+    def with_http(&block)
+      if @http && @http.started?
+        # Use existing connection from perform block
+        yield @http
+      else
+        # Create temporary connection for standalone requests
+        Net::HTTP.start(GRAPH_HOST, URI::HTTPS.default_port, use_ssl: true) do |http|
+          yield http
+        end
+      end
+    end
 
     def build_request_for(uri)
       request = Net::HTTP::Get.new(uri)

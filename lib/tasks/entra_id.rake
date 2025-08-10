@@ -4,19 +4,14 @@ namespace :entra_id do
     task users: :environment do
       puts "Starting EntraID user synchronization..."
       
-      reconciler = EntraId::AccountReconciler.new
-      reconciler.reconcile
+      EntraId::User.sync_all
     end
     
     desc "Sync all groups from Microsoft EntraID"
     task groups: :environment do
       puts "Starting EntraID group synchronization..."
       
-      directory = EntraId::Directory.new
-      groups = directory.groups
-      
-      sync = EntraId::GroupSync.new
-      sync.sync_all(groups)
+      EntraId::Group.sync_all
       
       puts "Group synchronization completed."
     end
