@@ -22,4 +22,30 @@ namespace :entra_id do
     Rake::Task['entra_id:sync:users'].invoke
     Rake::Task['entra_id:sync:groups'].invoke
   end
+
+  task reset_logins: :environment do
+    auth_source = AuthSourceLdap.first
+
+    def auth_source.original_user_login_for(email, options = {})
+      user_filter = Net::LDAP::Filter.eq(:objectclass, setting.class_user)
+      email_filter = Net::LDAP::Filter.eq(setting.mail, email)
+
+      result = with_ldap_connection(options[:login], options[:password]) do |ldap|
+        ldap_search(ldap, { base: setting.base_dn, filter: user_filter & email_filter }).first
+      end
+
+      result[:uid].first if result && result[:uid]
+    end
+
+    User.where.not(oid: nil).find_each do |user|
+      current_login = user.login
+      original_login = auth_source.original_user_login_for(current_login)
+
+      if original_login
+        user.update!(login: original_login)
+
+        puts "Updated #{current_login} -> #{original_login}"
+      end
+    end
+  end
 end

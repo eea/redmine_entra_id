@@ -49,7 +49,7 @@ class EntraId::UserTest < ActiveSupport::TestCase
     end
 
     existing_user.reload
-    assert_equal "new.email@example.com", existing_user.login
+    assert_equal "old.email@example.com", existing_user.login
     assert_equal "NewFirst", existing_user.firstname
     assert_equal "NewLast", existing_user.lastname
     assert_equal "new.email@example.com", existing_user.mail

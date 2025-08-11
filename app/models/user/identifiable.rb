@@ -38,7 +38,7 @@ module User::Identifiable
   end
 
   def sync_from_entra_user(entra_user, sync_time)
-    update!(entra_user.to_user_params.merge(
+    update!(entra_user.to_user_params.except(:login).merge(
       status: User::STATUS_ACTIVE,
       synced_at: sync_time
     ))
