@@ -31,20 +31,28 @@ namespace :entra_id do
       email_filter = Net::LDAP::Filter.eq(setting.mail, email)
 
       result = with_ldap_connection(options[:login], options[:password]) do |ldap|
-        ldap_search(ldap, { base: setting.base_dn, filter: user_filter & email_filter }).first
+        ldap_search(
+          ldap, 
+          { base: setting.base_dn, filter: user_filter & email_filter }
+        ).first
       end
 
-      result[:uid].first if result && result[:uid]
+      result[:uid].first if result.present? && result[:uid]
     end
 
-    User.where.not(oid: nil).find_each do |user|
+    User.active.where.not(oid: nil).find_each do |user|
       current_login = user.login
       original_login = auth_source.original_user_login_for(current_login)
 
       if original_login
-        user.update!(login: original_login)
+         print "Updating #{current_login}->#{original_login}..."
 
-        puts "Updated #{current_login} -> #{original_login}"
+        begin
+          user.update!(login: original_login)
+          puts "Done"
+        rescue => e
+          puts "Failed: #{e.message}"
+        end
       end
     end
   end
