@@ -12,7 +12,7 @@ class EntraId::Group
 
         puts "Found #{tuples.size} groups"
 
-        tuples.take(10).each do |tuple|
+        tuples.each do |tuple|
           begin
             members = c.get("groups/#{tuple["id"]}/transitiveMembers", select: "id", top: 999)
             group = EntraId::Group.new(oid: tuple["id"], display_name: tuple["displayName"], members: members)
