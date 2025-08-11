@@ -1,5 +1,19 @@
 class EntraId::User
   class << self
+    def find_by(**kwargs)
+      filter = kwargs.map { |k, v| "#{k} eq '#{v}'" }.join(" and ")
+
+      client = EntraId::Graph::Client.new
+      users = client.get(
+        "users",
+        filter: filter,
+        select: [ "id", "userPrincipalName", "mail", "givenName", "surname", "displayName" ],
+        top: 1
+      )
+
+      users.first ? new(users.first.with_indifferent_access) : nil
+    end
+
     def sync_all
       client = EntraId::Graph::Client.new
       time = Time.current
