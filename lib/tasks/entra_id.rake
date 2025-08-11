@@ -23,6 +23,19 @@ namespace :entra_id do
     Rake::Task['entra_id:sync:groups'].invoke
   end
 
+  ##
+  # Temporary scripts
+  #
+  # The tasks below are meant to repair a bug discovered after a full sync
+  task reset_auth_sources: :environment do
+    auth_source = AuthSourceLdap.first
+    logins = auth_source.send :ldap_users
+
+    User.active.where(auth_source: nil).find_each do |user|
+      user.update(auth_source: auth_source) if logins[:enabled].include?(user.login)
+    end
+  end
+
   task reset_logins: :environment do
     auth_source = AuthSourceLdap.first
 

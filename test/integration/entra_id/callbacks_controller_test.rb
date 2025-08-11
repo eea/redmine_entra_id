@@ -217,7 +217,7 @@ class EntraId::CallbacksControllerTest < Redmine::IntegrationTest
     assert_nil session[:entra_id_pkce_verifier]
   end
 
-  test "existing user with auth_source gets auth_source cleared on EntraId login" do
+  test "syncing an user does not change the auth source" do
     user = users(:users_002)
     user.update!(oid: "test-oid-123", auth_source_id: 1)
     
@@ -246,7 +246,9 @@ class EntraId::CallbacksControllerTest < Redmine::IntegrationTest
     assert_redirected_to my_page_path
 
     user.reload
-    assert_nil user.auth_source_id
+
+    # The auth source does not change
+    assert_equal 1, user.auth_source_id
   end
 
   test "failed authentication due to OAuth error clears OAuth session data" do
