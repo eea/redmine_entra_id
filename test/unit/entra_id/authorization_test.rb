@@ -134,10 +134,8 @@ class EntraId::AuthorizationTest < ActiveSupport::TestCase
     # Clear cache before test
     Rails.cache.clear
     
-    # Stub JWKS endpoint with Cache-Control header (max-age=300 = 5 minutes)
     jwks_endpoint = "https://login.microsoftonline.com/test-tenant-id/discovery/v2.0/keys"
-    
-    # Create a real RSA key for testing
+
     rsa_key = test_rsa_key
     n = Base64.urlsafe_encode64(rsa_key.n.to_s(2), padding: false)
     e = Base64.urlsafe_encode64(rsa_key.e.to_s(2), padding: false)
@@ -190,7 +188,6 @@ class EntraId::AuthorizationTest < ActiveSupport::TestCase
       assert_requested first_stub, times: 2 # Should now be 2
     end
   ensure
-    # Restore original cache store
     Rails.cache = original_cache_store
   end
 

@@ -100,7 +100,7 @@ class EntraId::UserTest < ActiveSupport::TestCase
       userPrincipalName: "john.doe@example.com",
       mail: "john.doe@example.com",
       givenName: "NewFirst",
-      surname: "NewLast"  
+      surname: "NewLast"
     }.with_indifferent_access)
 
     assert_no_difference "User.count" do
@@ -121,7 +121,7 @@ class EntraId::UserTest < ActiveSupport::TestCase
     existing_user = User.create!(
       login: "user@example.com",
       firstname: "OldFirstName",
-      lastname: "OldLastName", 
+      lastname: "OldLastName",
       mail: "user@example.com",
       oid: "old-oid-12345"
     )
@@ -146,7 +146,7 @@ class EntraId::UserTest < ActiveSupport::TestCase
 
   test "sets synced_at timestamp during replication" do
     freeze_time = Time.parse("2023-01-15 10:30:00 UTC")
-    
+
     travel_to freeze_time do
       entra_user = EntraId::User.new({
         id: "12345678-1234-1234-1234-123456789012",
@@ -157,7 +157,7 @@ class EntraId::UserTest < ActiveSupport::TestCase
       }.with_indifferent_access)
 
       entra_user.replicate_locally!
-      
+
       user = User.find_by(login: "timestamp.test@example.com")
       assert_equal freeze_time, user.synced_at
     end
@@ -166,7 +166,7 @@ class EntraId::UserTest < ActiveSupport::TestCase
   test "preserves existing Redmine-specific user data" do
     expected_created_on = 2.years.ago
     expected_last_login_on = 1.week.ago
-    
+
     existing_user = User.create!(
       login: "preserve.test@example.com",
       firstname: "OldFirst",
@@ -181,7 +181,7 @@ class EntraId::UserTest < ActiveSupport::TestCase
     entra_user = EntraId::User.new({
       id: "12345678-1234-1234-1234-123456789012",
       userPrincipalName: "preserve.test@example.com",
-      mail: "preserve.test@example.com", 
+      mail: "preserve.test@example.com",
       givenName: "NewFirst",
       surname: "NewLast"
     }.with_indifferent_access)
@@ -194,8 +194,10 @@ class EntraId::UserTest < ActiveSupport::TestCase
     assert_equal "NewLast", existing_user.lastname
     assert_equal "12345678-1234-1234-1234-123456789012", existing_user.oid
 
-    # Redmine-specific attributes should be preserved
-    assert_equal User::STATUS_LOCKED, existing_user.status
+    # Status should be set to active when syncing with EntraID
+    assert_equal User::STATUS_ACTIVE, existing_user.status
+
+    # Other Redmine-specific attributes should be preserved
     assert_equal true, existing_user.admin
     assert_in_delta expected_created_on, existing_user.created_on, 1.second
     assert_in_delta expected_last_login_on, existing_user.last_login_on, 1.second
@@ -235,5 +237,4 @@ class EntraId::UserTest < ActiveSupport::TestCase
     assert_equal "Unknown", entra_user.given_name
     assert_equal "User", entra_user.surname
   end
-
 end
