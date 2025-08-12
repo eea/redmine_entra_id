@@ -112,7 +112,7 @@ class EntraId::User
         lastname: surname,
         mail: email,
         oid: oid,
-        synced_at: Time.current,
+        synced_at: Time.current
       }
     end
 end
