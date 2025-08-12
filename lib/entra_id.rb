@@ -11,7 +11,7 @@ module EntraId
   GRAPH_API_BASE = "https://graph.microsoft.com/v1.0"
   GRAPH_OAUTH_SCOPE = "https://graph.microsoft.com/.default"
   GRAPH_IDENTITY_URL = "#{GRAPH_API_BASE}/me"
-  GRAPH_USERS_ENDPOINT = "#{GRAPH_API_BASE}/users"
+  GRAPH_USERS_ENDPOINT = "#{GRAPH_API_BASE}/users" 
 
   class << self
     def settings

@@ -113,7 +113,6 @@ class EntraId::User
         mail: email,
         oid: oid,
         synced_at: Time.current,
-        auth_source_id: nil
       }
     end
 end
