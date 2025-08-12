@@ -165,6 +165,11 @@ The plugin adds the following fields to the `users` table:
 - `oid` (string): Microsoft Entra ID Object ID (unique identifier)
 - `synced_at` (datetime): Last synchronization timestamp
 
+## Update scripts
+
+- `bin/rails entra_id:reset_logins`
+- `bin/rails entra_id:reset_auth_sources`
+
 ## Troubleshooting
 
 ### Common Issues

@@ -1,4 +1,4 @@
-namespace :entra_id do
+namespace :entra_id do 
   namespace :sync do
     desc "Sync all users from Microsoft EntraID"
     task users: :environment do
