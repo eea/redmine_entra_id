@@ -16,7 +16,6 @@ class EntraId::User
 
     def sync_all
       client = EntraId::Graph::Client.new
-      time = Time.current
       errors = []
 
       users = client.get(
@@ -83,16 +82,18 @@ class EntraId::User
     local_user = ::User.find_by_identity(self)
 
     if local_user
-      local_user.sync_from_entra_user(self, Time.current)
+      # Do not update the login for existing users
+      attributes = user_attributes.except(:login)
+      # Avoid generating security notifications if the email address in Redmine
+      # is Foo.Bar@baz.com while in Entra is foo.bar@baz.com.
+      attributes[:mail] = local_user.mail if local_user.mail.casecmp?(email)
+
+      local_user.update!(attributes)
     else
-      ::User.create_from_entra_user(self, Time.current)
+      ::User.create!(user_attributes)
     end
 
     true
-  end
-
-  def to_user_params
-    user_attributes
   end
 
   private
@@ -112,6 +113,7 @@ class EntraId::User
         lastname: surname,
         mail: email,
         oid: oid,
+        status: User::STATUS_ACTIVE,
         synced_at: Time.current
       }
     end
