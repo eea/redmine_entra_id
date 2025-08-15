@@ -17,3 +17,5 @@ en:
   field_entra_id_synced_at: EntraID Sync Time
   label_last_entra_id_sync: "EEA Entra ID synced at"
   button_login_with_entra_id: "Log in with EEA Microsoft Entra ID"
+  notice_entra_id_identity_removed: "Entra ID identity has been removed successfully."
+  error_entra_id_identity_removal_failed: "Failed to remove Entra ID identity."
