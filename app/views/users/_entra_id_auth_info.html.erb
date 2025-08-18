@@ -2,5 +2,13 @@
   <p>
     <label><%=l(:label_last_entra_id_sync)%></label>
     <%= format_time(form.object.synced_at) %>
+    <% if User.current.admin? %>
+      <%= link_to '', 
+                  entra_id_user_identity_path(form.object.id),
+                  method: :delete,
+                  data: { confirm: l(:text_are_you_sure) },
+                  class: 'icon icon-del',
+                  title: 'Remove EntraID identity' %>
+    <% end %>
   </p>
 <% end %>
