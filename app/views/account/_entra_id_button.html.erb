@@ -3,7 +3,7 @@
 <% end %>
 
 <div id="entra-id-form">
-    <button type="button" class="ms-signin-button" onclick="window.location.href='<%= new_entra_id_authorization_path %>'">
+    <button type="button" class="ms-signin-button" onclick="window.location.href='<%= new_entra_id_authorization_path(back_url: params[:back_url]) %>'">
         <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 21 21">
             <rect x="0" y="0" width="10" height="10" fill="#f25022"/>
             <rect x="11" y="0" width="10" height="10" fill="#7fba00"/>
