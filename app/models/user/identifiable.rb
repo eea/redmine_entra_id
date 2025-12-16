@@ -19,6 +19,7 @@ module User::Identifiable
 
   def sync_with_identity(identity)
     update!(identity.to_user_params.except(:login, :mail))
+    update_last_login_on!
   end
 
   def authenticated_via_entra?

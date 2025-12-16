@@ -287,4 +287,45 @@ class EntraId::CallbacksControllerTest < Redmine::IntegrationTest
     assert_nil session[:entra_id_nonce]
     assert_nil session[:entra_id_pkce_verifier]
   end
+
+  test "redirects to original URL after successful authentication via back_url" do
+    user = users(:users_002)
+    user.update!(oid: "test-oid-123")
+
+    project = Project.generate!(is_public: false)
+    issue = Issue.generate!(project: project)
+    issue_path = issue_path(issue)
+    issue_full_url = issue_url(issue)
+
+    # Try to access private issue without logging in
+    get issue_path
+    assert_redirected_to signin_path(back_url: issue_full_url)
+
+    # Start OAuth flow with back_url
+    get new_entra_id_authorization_path, params: { back_url: issue_full_url }
+    assert_redirected_to %r{https://login\.microsoftonline\.com}
+
+    state = session[:entra_id_state]
+    code_verifier = session[:entra_id_pkce_verifier]
+    nonce = session[:entra_id_nonce]
+    assert_equal issue_full_url, session[:back_url]
+
+    stub_full_oauth_flow(
+      code: "test-code",
+      code_verifier: code_verifier,
+      nonce: nonce,
+      user_data: {
+        id: "test-oid-123",
+        givenName: "Test",
+        surname: "User",
+        mail: user.mail
+      }
+    )
+
+    # Complete OAuth callback
+    get entra_id_callback_path, params: { code: "test-code", state: state }
+
+    # Should redirect back to the original issue
+    assert_redirected_to issue_path
+  end
 end
