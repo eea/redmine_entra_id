@@ -3,7 +3,7 @@ class EntraId::CallbacksController < AccountController
   rescue_from JWT::VerificationError, with: :handle_jwt_error
   rescue_from OAuth2::Error, with: :handle_oauth_error
 
-  before_action :ensure_entra_id_enabled, :handle_oauth_errors, :validate_oauth_state, :set_entra_id_identity
+  before_action :ensure_entra_id_enabled, :handle_oauth_errors, :validate_oauth_state, :set_entra_id_identity, :restore_back_url
   after_action :cleanup_oauth_session
 
   def show
@@ -83,9 +83,14 @@ class EntraId::CallbacksController < AccountController
       redirect_to signin_path
     end
 
+    def restore_back_url
+      params[:back_url] = session[:back_url] if session[:back_url].present?
+    end
+
     def cleanup_oauth_session
       session.delete(:entra_id_state)
       session.delete(:entra_id_nonce)
       session.delete(:entra_id_pkce_verifier)
+      session.delete(:back_url)
     end
 end
