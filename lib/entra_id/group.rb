@@ -80,9 +80,10 @@ class EntraId::Group
       member_oids = @members.map { |m| m["id"] }
       user_ids = ::User.where(oid: member_oids).where.not(type: "Group").pluck(:id)
       
-      # Delete all existing memberships
-      @group.users.delete_all
-      
+      # Remove all existing members individually to trigger Group#user_removed,
+      # which cleans up inherited project role assignments (MemberRole records).
+      @group.users.each { |user| @group.users.delete(user) }
+
       # Bulk assign new users (Rails handles the insert)
       @group.user_ids = user_ids
     end
