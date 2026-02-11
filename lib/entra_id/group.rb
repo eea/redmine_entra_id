@@ -77,22 +77,13 @@ class EntraId::Group
     def create_or_update_memberships
       return unless @group
 
-      expected_member_oids = @members.map { |m| m["id"] }
-      current_member_oids = @group.users.pluck(:oid)
+      expected_member_oids = @members.map { |member| member["id"] }.compact.uniq
+      current_member_oids = @group.users.pluck(:oid).compact
 
-      created_oids = expected_member_oids - current_member_oids
-      removed_oids = current_member_oids - expected_member_oids
+      users_to_add = ::User.where(oid: expected_member_oids - current_member_oids)
+      users_to_remove = @group.users.where(oid: nil).or(@group.users.where.not(oid: expected_member_oids))
 
-      created_oids.each do |oid|
-        user = ::User.find_by(oid: oid)
-
-        @group.user_added(user) if user
-      end
-
-      removed_oids.each do |oid|
-        user = ::User.find_by(oid: oid)
-
-        @group.user_removed(user) if user
-      end
+      users_to_add.find_each { |user| @group.users << user }
+      users_to_remove.find_each { |user| @group.users.delete(user) }
     end
 end
