@@ -77,14 +77,22 @@ class EntraId::Group
     def create_or_update_memberships
       return unless @group
 
-      member_oids = @members.map { |m| m["id"] }
-      user_ids = ::User.where(oid: member_oids).where.not(type: "Group").pluck(:id)
-      
-      # Remove all existing members individually to trigger Group#user_removed,
-      # which cleans up inherited project role assignments (MemberRole records).
-      @group.users.each { |user| @group.users.delete(user) }
+      expected_member_oids = @members.map { |m| m["id"] }
+      current_member_oids = @group.users.pluck(:oid)
 
-      # Bulk assign new users (Rails handles the insert)
-      @group.user_ids = user_ids
+      created_oids = expected_member_oids - current_member_oids
+      removed_oids = current_member_oids - expected_member_oids
+
+      created_oids.each do |oid|
+        user = ::User.find_by(oid: oid)
+
+        @group.user_added(user) if user
+      end
+
+      removed_oids.each do |oid|
+        user = ::User.find_by(oid: oid)
+
+        @group.user_removed(user) if user
+      end
     end
 end

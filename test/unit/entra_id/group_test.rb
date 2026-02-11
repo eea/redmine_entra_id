@@ -33,7 +33,7 @@ class EntraId::GroupTest < ActiveSupport::TestCase
     ).sync
 
     redmine_group = Group.find_by(oid: @group_id)
-    assert_equal "🆔 Engineering Renamed", redmine_grou236p.name
+    assert_equal "🆔 Engineering Renamed", redmine_group.name
   end
 
   test "removing a user from the group removes inherited roles from all projects" do
