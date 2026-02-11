@@ -26,11 +26,7 @@ class EntraId::GroupTest < ActiveSupport::TestCase
     group = EntraId::Group.new(oid: @group_id, display_name: "Engineering", members: [{ "id" => @user.oid }])
     group.sync
 
-    EntraId::Group.new(
-      oid: @group_id,
-      display_name: "Engineering Renamed",
-      members: [{ "id" => @user.oid }]
-    ).sync
+    EntraId::Group.new(oid: @group_id,display_name: "Engineering Renamed",members: [{ "id" => @user.oid }]).sync
 
     redmine_group = Group.find_by(oid: @group_id)
     assert_equal "🆔 Engineering Renamed", redmine_group.name
@@ -38,7 +34,6 @@ class EntraId::GroupTest < ActiveSupport::TestCase
 
   test "removing a user from the group removes inherited roles from all projects" do
     group = EntraId::Group.new(oid: @group_id, display_name: "Staff", members: [{ "id" => @user.oid }])
-
     group.sync
 
     redmine_group = Group.find_by!(oid: @group_id)
@@ -49,14 +44,34 @@ class EntraId::GroupTest < ActiveSupport::TestCase
     assert inherited_role?(@user, @project)
     assert inherited_role?(@user, @other_project)
 
-    EntraId::Group.new(
-      oid: @group_id,
-      display_name: "Staff",
-      members: []
-    ).sync
+    EntraId::Group.new(oid: @group_id,display_name: "Staff",members: []).sync
 
     assert_not inherited_role?(@user, @project)
     assert_not inherited_role?(@user, @other_project)
+  end
+
+  test "sync removes group users without oid" do
+    redmine_group = Group.create!(oid: @group_id, lastname: "🆔 Staff")
+    user_without_oid = User.find(3)
+    another_user_without_oid = User.find(4)
+
+    user_without_oid.update_column(:oid, nil)
+    another_user_without_oid.update_column(:oid, nil)
+
+    redmine_group.users << @user
+    redmine_group.users << user_without_oid
+    redmine_group.users << another_user_without_oid
+
+    assert_includes redmine_group.user_ids, @user.id
+    assert_includes redmine_group.user_ids, user_without_oid.id
+    assert_includes redmine_group.user_ids, another_user_without_oid.id
+
+    EntraId::Group.new(oid: @group_id, display_name: "Staff", members: [{ "id" => @user.oid }]).sync
+    redmine_group.reload
+
+    assert_includes redmine_group.user_ids, @user.id
+    assert_not_includes redmine_group.user_ids, user_without_oid.id
+    assert_not_includes redmine_group.user_ids, another_user_without_oid.id
   end
 
   private
